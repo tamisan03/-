@@ -1086,6 +1086,11 @@
         const { doc, onSnapshot } = window.firestoreTools;
 
         onSnapshot(doc(window.db, "teams", "seinan_data"), (snapshot) => {
+            // ローカルで変更適用中（Pending）のメタデータ変更は上書きをスキップ
+            if (snapshot.metadata && snapshot.metadata.hasPendingWrites) {
+                return;
+            }
+
             if (snapshot.exists()) {
                 const data = snapshot.data();
                 
@@ -2518,11 +2523,21 @@
                     else if (activeChoice === 'continue') { player.stats.serve.continue++; showToast(`${player.number}番 ${player.name}: チャンスサーブ`); }
                     else if (activeChoice === 'error') { player.stats.serve.error++; showToast(`${player.number}番 ${player.name}: サーブミス`); }
                 }
+
+                // 配列内の対象選手データを明示的に更新
+                const pIndex = players.findIndex(p => String(p.id) === String(player.id));
+                if (pIndex !== -1) {
+                    players[pIndex].stats = player.stats;
+                }
+
+                // 全体スタッツの再描画を確実に実行
                 renderTeamSummary(players, 'current-team-summary', '📊 チーム全体スタッツ（現在の試合）');
+
+                // ストレージおよびFirestoreに保存
+                saveStorage();
             } else if (!currentMode) {
                 openInfoModal(player, false);
             }
-            saveStorage();
         }
 
         cardElement.addEventListener('pointerdown', startHandler, { passive: false });
