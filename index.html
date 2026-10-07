@@ -1603,7 +1603,7 @@
     }
 
     function addIssue() {
-        // iPhone文字消去防止：フォーカス解除により変換途中文字列を確定
+        // 1. フォーカスを外してiPhoneの日本語入力を強制確定
         if (document.activeElement) {
             document.activeElement.blur();
         }
@@ -1613,7 +1613,10 @@
         const priorityEl = document.getElementById('issue-priority-select');
         const descEl = document.getElementById('issue-desc-input');
 
+        // 2. blur後に確定された最新の値を割り当て
         const title = titleEl.value.trim();
+        const desc = descEl.value ? descEl.value.trim() : '';
+
         if (!title) {
             alert('課題タイトルを入力してください。');
             return;
@@ -1624,7 +1627,7 @@
             title: title,
             category: catEl.value,
             priority: priorityEl.value,
-            desc: descEl.value.trim(),
+            desc: desc,
             status: 'open'
         });
 
@@ -1641,10 +1644,13 @@
         if (!issue) return;
 
         document.getElementById('edit-issue-id').value = issue.id;
-        document.getElementById('edit-issue-title').value = issue.title;
+        document.getElementById('edit-issue-title').value = issue.title || '';
         document.getElementById('edit-issue-category').value = issue.category || 'スパイク';
         document.getElementById('edit-issue-priority').value = issue.priority || 'mid';
-        document.getElementById('edit-issue-desc').value = issue.desc || '';
+        
+        // テキストエリアへ最新の文字をセット
+        const descEl = document.getElementById('edit-issue-desc');
+        descEl.value = issue.desc || '';
 
         document.getElementById('edit-issue-modal').style.display = 'flex';
     }
@@ -1654,12 +1660,18 @@
         const issue = teamIssues.find(i => String(i.id) === String(id));
 
         if (issue) {
-            // iPhone文字消去防止：フォーカス解除により変換途中文字列を確定
+            // 1. フォーカスを外してiPhoneの日本語入力を強制確定
             if (document.activeElement) {
                 document.activeElement.blur();
             }
 
-            const title = document.getElementById('edit-issue-title').value.trim();
+            const titleEl = document.getElementById('edit-issue-title');
+            const descEl = document.getElementById('edit-issue-desc');
+
+            // 2. blur実行後の最新値を適用
+            const title = titleEl.value.trim();
+            const desc = descEl.value ? descEl.value.trim() : '';
+
             if (!title) {
                 alert('課題タイトルを入力してください。');
                 return;
@@ -1668,7 +1680,7 @@
             issue.title = title;
             issue.category = document.getElementById('edit-issue-category').value;
             issue.priority = document.getElementById('edit-issue-priority').value;
-            issue.desc = document.getElementById('edit-issue-desc').value.trim();
+            issue.desc = desc;
 
             saveStorage();
             renderIssuesUI();
