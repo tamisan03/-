@@ -9,6 +9,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+        // Cloud Firestore モジュールの追加インポート
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // 提供されたFirebase設定情報
         const firebaseConfig = {
@@ -21,14 +23,18 @@
             measurementId: "G-5SQ92WZ97C"
         };
 
-        // Firebaseの初期化
+        // Firebase & Firestoreの初期化
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
+        const db = getFirestore(app);
 
-        // 将来的なデータベース連携(Firestore等)のためにwindowオブジェクトへ保持
+        // グローバルオブジェクトへ保持（アプリケーション本体スクリプトから利用）
         window.firebaseApp = app;
         window.firebaseAnalytics = analytics;
-        console.log("Firebase initialized successfully.");
+        window.db = db;
+        window.firestoreTools = { doc, setDoc, onSnapshot };
+
+        console.log("Firebase & Firestore initialized successfully.");
     </script>
 
     <style>
@@ -1010,6 +1016,9 @@
     let teamIssues = JSON.parse(localStorage.getItem('vball9_team_issues')) || [];
     let currentSelectedMatchId = null;
 
+    // クラウド側からの自動更新でループ送信が起きないように制限するフラグ
+    let isRemoteUpdate = false;
+
     function switchTab(tabId) {
         document.querySelectorAll('.tab-card').forEach(card => card.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -1032,7 +1041,9 @@
         }
     }
 
-    function saveStorage() {
+    // 【Firebase Firestore & LocalStorage 同時保存】
+    async function saveStorage() {
+        // 1. ローカルストレージに保存
         localStorage.setItem('vball9_players', JSON.stringify(players));
         localStorage.setItem('vball9_starters', JSON.stringify(starters));
         localStorage.setItem('vball9_pin_positions', JSON.stringify(pinPositions));
@@ -1040,6 +1051,63 @@
         localStorage.setItem('vball9_flick_starters', JSON.stringify(flickStarters));
         localStorage.setItem('vball9_saved_matches', JSON.stringify(savedMatches));
         localStorage.setItem('vball9_team_issues', JSON.stringify(teamIssues));
+
+        // 2. クラウド受信時（リモート更新時）は送信をスキップ
+        if (isRemoteUpdate) return;
+
+        // 3. Firestore（クラウド）へ一括保存
+        if (window.db && window.firestoreTools) {
+            const { doc, setDoc } = window.firestoreTools;
+            try {
+                await setDoc(doc(window.db, "teams", "seinan_data"), {
+                    players: players,
+                    starters: starters,
+                    pinPositions: pinPositions,
+                    ballPosition: ballPosition,
+                    flickStarters: flickStarters,
+                    savedMatches: savedMatches,
+                    teamIssues: teamIssues,
+                    updatedAt: new Date().toISOString()
+                });
+                console.log("Firestoreへの同期完了");
+            } catch (error) {
+                console.error("Firestore保存エラー:", error);
+            }
+        }
+    }
+
+    // 【Firestore リアルタイム自動受信処理】
+    function setupFirestoreSync() {
+        if (!window.db || !window.firestoreTools) {
+            setTimeout(setupFirestoreSync, 500);
+            return;
+        }
+
+        const { doc, onSnapshot } = window.firestoreTools;
+
+        onSnapshot(doc(window.db, "teams", "seinan_data"), (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.data();
+                
+                isRemoteUpdate = true; // 保存ループ防止フラグをオン
+
+                if (data.players) players = data.players;
+                if (data.starters) starters = data.starters;
+                if (data.pinPositions) pinPositions = data.pinPositions;
+                if (data.ballPosition) ballPosition = data.ballPosition;
+                if (data.flickStarters) flickStarters = data.flickStarters;
+                if (data.savedMatches) savedMatches = data.savedMatches;
+                if (data.teamIssues) teamIssues = data.teamIssues;
+
+                // 画面全体を再描画
+                render();
+                
+                isRemoteUpdate = false; // フラグ解除
+                console.log("クラウド(Firestore)から最新データを受け取りました");
+            }
+        }, (error) => {
+            console.error("Firestore受信エラー:", error);
+        });
     }
 
     function initStatsObj() {
@@ -1126,9 +1194,7 @@
             totalSpikeSucc += st.spike.success || 0;
             totalSpikeAll += (st.spike.success + st.spike.continue + st.spike.error) || 0;
 
-            // 有効サーブ数（分子） = エース/崩す(success) のみ
             totalServeEffective += (st.serve.success || 0);
-            // 打数（分母） = エース/崩す + チャンスサーブ(continue) + ミス(error)
             totalServeAll += (st.serve.success + st.serve.continue + st.serve.error) || 0;
 
             totalBlockSucc += st.block.success || 0;
@@ -1198,7 +1264,6 @@
             .filter(item => item.total > 0 && item.rate >= 0)
             .sort((a, b) => b.rate - a.rate || b.succ - a.succ);
 
-        // 有効サーブ率ランキング (分子: エース/崩す[success]のみ, 分母: エース+チャンス+ミス)
         const serveList = targetPlayersData
             .map(p => {
                 const st = p.stats || initStatsObj();
@@ -1360,13 +1425,11 @@
                     else if (spikePctNum >= 60) spikeClass = "cell-nice";
                 }
 
-                // 有効サーブ率計算: 分子 = エース/崩す(success), 分母 = エース/崩す + チャンスサーブ + ミス
                 const serveTotal = st.serve.success + st.serve.continue + st.serve.error;
                 const serveEffective = st.serve.success || 0;
                 const serveEffectiveRateStr = calcRate(serveEffective, serveTotal);
                 const servePctNum = serveTotal > 0 ? (serveEffective / serveTotal) * 100 : 0;
                 
-                // 有効サーブ率のハイライト条件 (60%超で緑, 20%未満で赤)
                 let serveClass = "";
                 if (serveTotal > 0) {
                     if (servePctNum > 60) serveClass = "cell-nice";
@@ -1385,7 +1448,6 @@
                     else if (recPctNum >= 80) recClass = "cell-nice";
                 }
 
-                // その他ミスハイライト条件 (3本以上で赤)
                 const otherErr = st.otherError || 0;
                 let otherErrClass = (otherErr >= 3) ? "cell-warn" : "";
 
@@ -2637,6 +2699,9 @@
 
     updatePlayerPosSelects('p-');
     render();
+
+    // Firestoreのリアルタイム自動同期を開始
+    setupFirestoreSync();
 </script>
 
 </body>
