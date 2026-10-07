@@ -394,7 +394,7 @@
         .team-summary-title {
             font-size: 0.85rem;
             font-weight: 800;
-            color: #1e4ed8;
+            color: #1e293b;
             margin-bottom: 8px;
             border-bottom: 1px solid #dbeafe;
             padding-bottom: 4px;
@@ -980,7 +980,7 @@
 
 <script>
     // --- チーム共通合言葉設定 ---
-    const TEAM_SHARED_PASSWORD = "seinan"; // 任意の合言葉に変更可能です
+    const TEAM_SHARED_PASSWORD = "seinan2026"; // 任意の合言葉に変更可能です
 
     // 認証状態の自動管理とアクセス保護
     function initAppAuth() {
@@ -1603,6 +1603,11 @@
     }
 
     function addIssue() {
+        // iPhone文字消去防止：フォーカス解除により変換途中文字列を確定
+        if (document.activeElement) {
+            document.activeElement.blur();
+        }
+
         const titleEl = document.getElementById('issue-title-input');
         const catEl = document.getElementById('issue-category-select');
         const priorityEl = document.getElementById('issue-priority-select');
@@ -1649,6 +1654,11 @@
         const issue = teamIssues.find(i => String(i.id) === String(id));
 
         if (issue) {
+            // iPhone文字消去防止：フォーカス解除により変換途中文字列を確定
+            if (document.activeElement) {
+                document.activeElement.blur();
+            }
+
             const title = document.getElementById('edit-issue-title').value.trim();
             if (!title) {
                 alert('課題タイトルを入力してください。');
@@ -1845,6 +1855,11 @@
     }
 
     async function addPlayer() {
+        // iPhone文字消去防止：フォーカス解除により変換途中文字列を確定
+        if (document.activeElement) {
+            document.activeElement.blur();
+        }
+
         const num = document.getElementById('p-number').value;
         const name = document.getElementById('p-name').value;
         const height = document.getElementById('p-height').value;
@@ -2194,6 +2209,11 @@
     }
 
     async function updatePlayer() {
+        // iPhone文字消去防止：フォーカス解除により変換途中文字列を確定
+        if (document.activeElement) {
+            document.activeElement.blur();
+        }
+
         const id = document.getElementById('edit-id').value;
         const player = players.find(p => String(p.id) === String(id));
         
