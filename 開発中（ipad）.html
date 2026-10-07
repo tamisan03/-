@@ -1,0 +1,2609 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>9人制バレーボール チーム管理 (iPad完全対応版)</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            background: #e2e8f0;
+            padding: 6px;
+            border-radius: 12px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 8px;
+            background: transparent;
+            color: #475569;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--surface);
+            color: var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tab-card { display: none; }
+        .tab-card.active { display: block; }
+
+        .card {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+
+        h2 { margin-top: 0; font-size: 1.3rem; color: #1e293b; }
+
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #475569; }
+        
+        .required { color: #ef4444; margin-left: 2px; font-weight: bold; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 0.95rem;
+            background-color: #fff;
+            font-family: inherit;
+        }
+        textarea { resize: vertical; min-height: 60px; }
+
+        button.action-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button.action-btn:hover { background: #1d4ed8; }
+
+        .ipad-grid-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .ipad-grid-layout {
+                grid-template-columns: 380px 1fr;
+            }
+        }
+
+        .court-wrapper {
+            position: relative;
+            width: 100%;
+            background: #e06d53;
+            border: 5px solid #ffffff;
+            border-radius: 12px;
+            aspect-ratio: 3 / 4;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            overflow: hidden;
+            touch-action: none;
+            container-type: inline-size;
+        }
+
+        .net-line {
+            position: absolute;
+            top: 50%; left: 0; right: 0;
+            height: 8px;
+            background: #ffffff;
+            box-shadow: 0 0 6px rgba(0,0,0,0.3);
+            border-top: 2px dashed #333;
+            border-bottom: 2px dashed #333;
+            transform: translateY(-50%);
+            z-index: 5;
+        }
+
+        .court-label {
+            position: absolute;
+            left: 12px;
+            font-size: clamp(0.75rem, 3cqw, 0.95rem);
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.7);
+            pointer-events: none;
+        }
+
+        .player-pin {
+            position: absolute;
+            width: 14cqw;
+            height: 14cqw;
+            min-width: 48px; min-height: 48px;
+            max-width: 80px; max-height: 80px;
+            background: #ffffff;
+            color: #0f172a;
+            border: 0.6cqw solid #2563eb;
+            border-radius: 50%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: grab;
+            box-shadow: 0 1cqw 2cqw rgba(0,0,0,0.25);
+            user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            box-sizing: border-box;
+            padding: 2px;
+            will-change: left, top;
+            touch-action: none;
+        }
+        .player-pin:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.1); z-index: 100; }
+        
+        .player-pin img.pin-photo {
+            width: 100%; height: 100%;
+            object-fit: cover; border-radius: 50%;
+            pointer-events: none; user-select: none; -webkit-user-drag: none;
+        }
+
+        .player-pin .pin-num { color: #2563eb; font-weight: 800; font-size: 4cqw; line-height: 1; pointer-events: none; }
+        .player-pin .pin-name { font-size: 2.2cqw; font-weight: bold; width: 98%; text-align: center; white-space: nowrap; overflow: hidden; margin-top: 1px; line-height: 1; pointer-events: none; }
+        .player-pin .pin-condition { position: absolute; top: -0.6cqw; left: -0.6cqw; font-size: 4.5cqw; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); z-index: 15; pointer-events: none; }
+
+        .volleyball-pin {
+            position: absolute;
+            width: 8cqw; height: 8cqw;
+            min-width: 28px; min-height: 28px;
+            max-width: 44px; max-height: 44px;
+            cursor: grab;
+            user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            filter: drop-shadow(0px 3px 6px rgba(0,0,0,0.35));
+            will-change: left, top;
+            touch-action: none;
+        }
+        .volleyball-pin:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.2); z-index: 100; }
+        .volleyball-pin svg { width: 100%; height: 100%; display: block; pointer-events: none; }
+
+        .starter-select-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .flick-front-grid, .flick-back-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        @media (min-width: 768px) {
+            .flick-front-grid { grid-template-columns: repeat(6, 1fr); }
+        }
+
+        .grid-court-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            background: #cbd5e1;
+            padding: 14px;
+            border-radius: 14px;
+            touch-action: none;
+            user-select: none; -webkit-user-select: none;
+        }
+
+        .grid-court-section { display: flex; flex-direction: column; gap: 8px; }
+
+        .grid-section-title {
+            font-size: 0.85rem; font-weight: bold; color: #334155;
+            background: #ffffff; padding: 4px 10px; border-radius: 6px;
+            display: inline-block; align-self: flex-start;
+        }
+
+        .grid-row-6 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+        @media (min-width: 768px) {
+            .grid-row-6 { grid-template-columns: repeat(6, 1fr); }
+        }
+
+        .grid-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+        .big-player-card {
+            position: relative;
+            background: #ffffff;
+            border: 2.5px solid #2563eb;
+            border-radius: 12px;
+            padding: 10px 6px;
+            min-height: 95px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            cursor: pointer;
+            touch-action: none; user-select: none; -webkit-user-select: none;
+            transition: transform 0.1s, background-color 0.1s;
+            z-index: 10;
+        }
+        .big-player-card:active { transform: scale(0.96); background: #eff6ff; }
+        .big-player-card.active-flick { z-index: 100 !important; border-color: #1d4ed8; box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.35); }
+
+        .big-player-card .card-pos { font-size: 0.7rem; font-weight: bold; color: #64748b; margin-bottom: 3px; }
+        .big-player-card .card-num { font-size: 1.4rem; font-weight: 800; color: #2563eb; line-height: 1; }
+        .big-player-card .card-name { font-size: 0.85rem; font-weight: bold; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 95%; margin-top: 3px; }
+        .big-player-card .card-avatar { width: 38px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid #2563eb; margin-bottom: 3px; }
+        .big-player-card .card-cond { position: absolute; top: 5px; left: 5px; font-size: 0.95rem; }
+
+        .empty-card { background: #e2e8f0; border: 2px dashed #cbd5e1; color: #94a3b8; font-size: 0.8rem; font-weight: bold; }
+        .table-wrapper { max-height: 650px; overflow-y: auto; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+        th { background: #f1f5f9; color: #475569; position: sticky; top: 0; z-index: 2; }
+        
+        .list-photo { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); vertical-align: middle; margin-right: 6px; cursor: pointer; }
+
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 10px; font-size: 0.72rem; font-weight: bold; background: #84cc16; color: #ffffff; margin-right: 2px; margin-bottom: 2px; }
+        .badge-sub { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+
+        .btn-group { display: flex; gap: 4px; }
+        .btn-edit { background: #0ea5e9; padding: 5px 8px; font-size: 0.75rem; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-del { background: #ef4444; padding: 5px 8px; font-size: 0.75rem; color: white; border: none; border-radius: 6px; cursor: pointer; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal { background: white; padding: 24px; border-radius: 16px; width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-cancel { background: #64748b; color: white; border: none; border-radius: 8px; padding: 12px; width: 100%; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
+
+        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+        .info-row.memo-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+        .info-memo-content { background: #f1f5f9; padding: 10px; border-radius: 8px; width: 100%; box-sizing: border-box; white-space: pre-wrap; word-break: break-word; font-size: 0.9rem; color: #334155; }
+        .info-label { font-weight: bold; color: #64748b; }
+        .info-avatar { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); margin: 0 auto 12px auto; display: block; }
+
+        .stats-table { width: 100%; margin-top: 12px; font-size: 0.85rem; }
+        .stats-table th, .stats-table td { text-align: center; padding: 8px 3px; }
+
+        .flick-pop-menu { position: absolute; display: none; pointer-events: none; z-index: 1000; transform: translate(-50%, -50%); }
+        .flick-title { position: absolute; top: -32px; left: 50%; transform: translateX(-50%); background: #0f172a; color: white; padding: 3px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .flick-opt { position: absolute; padding: 8px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; color: white; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.35); transition: transform 0.1s; }
+
+        .flick-pop-menu.spike-mode .flick-opt.left { top: -20px; left: -105px; background: #ca8a04; }
+        .flick-pop-menu.spike-mode .flick-opt.top { top: -65px; left: -25px; background: #16a34a; }
+        .flick-pop-menu.spike-mode .flick-opt.right { top: -20px; left: 50px; background: #dc2626; }
+        .flick-pop-menu.spike-mode .flick-opt.bottom { top: 25px; left: -35px; background: #64748b; }
+
+        .flick-pop-menu.block-mode .flick-opt.top { top: -65px; left: -25px; background: #16a34a; }
+        .flick-pop-menu.block-mode .flick-opt.left { top: -20px; left: -115px; background: #ca8a04; }
+        .flick-pop-menu.block-mode .flick-opt.bottom { top: 25px; left: -25px; background: #dc2626; }
+        .flick-pop-menu.block-mode .flick-opt.right { top: -20px; left: 50px; background: #64748b; }
+
+        .flick-pop-menu.reception-mode .flick-opt.top { top: -65px; left: -35px; background: #16a34a; }
+        .flick-pop-menu.reception-mode .flick-opt.right { top: -20px; left: 50px; background: #ca8a04; }
+        .flick-pop-menu.reception-mode .flick-opt.bottom { top: 25px; left: -25px; background: #dc2626; }
+        .flick-pop-menu.reception-mode .flick-opt.left { top: -20px; left: -115px; background: #64748b; }
+
+        .flick-pop-menu.serve-mode .flick-opt.bottom { top: 25px; left: -45px; background: #16a34a; }
+        .flick-pop-menu.serve-mode .flick-opt.left { top: -20px; left: -120px; background: #ca8a04; }
+        .flick-pop-menu.serve-mode .flick-opt.right { top: -20px; left: 50px; background: #dc2626; }
+        .flick-pop-menu.serve-mode .flick-opt.top { top: -65px; left: -35px; background: #64748b; }
+
+        .flick-opt.active { transform: scale(1.25); border: 2px solid white; z-index: 1001; }
+
+        .flick-toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); color: #fff; padding: 12px 24px; border-radius: 24px; font-size: 0.95rem; font-weight: bold; z-index: 2000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .reset-photo-btn { background: #ef4444; color: white; border: none; padding: 6px 10px; font-size: 0.8rem; border-radius: 6px; cursor: pointer; margin-top: 4px; }
+
+        .match-data-panel { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+        .panel-row { display: flex; gap: 10px; margin-top: 8px; }
+        .btn-reset-stats { background: #ef4444; color: white; border: none; padding: 10px 14px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+        .btn-save-match { background: #16a34a; color: white; border: none; padding: 10px 14px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+
+        .selected-match-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
+        .setter-toss-badge { display: inline-block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e4ed8; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; margin-bottom: 4px; font-weight: bold; }
+
+        td.cell-warn, span.setter-toss-badge.cell-warn { background-color: #fee2e2 !important; color: #991b1b !important; border-color: #fca5a5 !important; }
+        td.cell-nice { background-color: #dcfce7 !important; color: #166534 !important; border-color: #86efac !important; }
+        .clickable-player-name { color: #2563eb; font-weight: bold; cursor: pointer; text-decoration: underline; }
+
+        .ai-advisor-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 12px 14px; margin-top: 16px; font-size: 0.85rem; }
+        .ai-advisor-title { font-weight: bold; color: #0369a1; margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
+        .ai-item { margin-bottom: 6px; line-height: 1.45; color: #334155; }
+        .ai-item.strength { color: #15803d; }
+        .ai-item.weakness { color: #b91c1c; }
+
+        .team-summary-box {
+            background: #ffffff;
+            border: 1.5px solid #2563eb;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 5px rgba(37, 99, 235, 0.08);
+        }
+        .team-summary-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #1e4ed8;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #dbeafe;
+            padding-bottom: 4px;
+        }
+        .team-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        @media (min-width: 600px) {
+            .team-summary-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+        .team-stat-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 10px;
+            text-align: center;
+        }
+        .team-stat-label {
+            font-size: 0.72rem;
+            color: #64748b;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .team-stat-val {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .team-stat-sub {
+            font-size: 0.68rem;
+            color: #64748b;
+        }
+
+        .top3-section-box {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+        }
+        .top3-section-title {
+            font-size: 0.88rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 10px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid #cbd5e1;
+        }
+        .top3-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 10px;
+        }
+        @media (min-width: 600px) {
+            .top3-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (min-width: 1000px) {
+            .top3-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        .top3-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .top3-card-header {
+            font-size: 0.78rem;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 4px;
+        }
+        .top3-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .top3-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            padding: 3px 0;
+            border-bottom: 1px dashed #f1f5f9;
+        }
+        .top3-item:last-child {
+            border-bottom: none;
+        }
+        .top3-rank {
+            font-weight: 800;
+            width: 22px;
+            color: #64748b;
+        }
+        .top3-rank.rank-1 { color: #d97706; }
+        .top3-rank.rank-2 { color: #475569; }
+        .top3-rank.rank-3 { color: #b45309; }
+        .top3-pname {
+            flex: 1;
+            font-weight: bold;
+            color: #0f172a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 4px;
+        }
+        .top3-val {
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        /* チームの課題タブ用スタイル */
+        .issue-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        @media (min-width: 900px) {
+            .issue-grid {
+                grid-template-columns: 360px 1fr;
+            }
+        }
+        .issue-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            position: relative;
+        }
+        .issue-card.priority-high { border-left: 5px solid #ef4444; }
+        .issue-card.priority-mid { border-left: 5px solid #f59e0b; }
+        .issue-card.priority-low { border-left: 5px solid #10b981; }
+        
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .issue-title {
+            font-weight: bold;
+            font-size: 1rem;
+            color: #0f172a;
+        }
+        .issue-category-badge {
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #e2e8f0;
+            color: #334155;
+            font-weight: bold;
+        }
+        .issue-body {
+            font-size: 0.88rem;
+            color: #475569;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin-bottom: 12px;
+        }
+        .issue-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            color: #64748b;
+            border-top: 1px dashed var(--border);
+            padding-top: 8px;
+        }
+        .status-badge {
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .status-open { background: #fee2e2; color: #991b1b; }
+        .status-wip { background: #fef3c7; color: #92400e; }
+        .status-done { background: #dcfce7; color: #166534; }
+    </style>
+</head>
+<body>
+
+<div style="width: 100%; max-width: 1400px;">
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('tab-register')">選手登録</button>
+        <button class="tab-btn" onclick="switchTab('tab-list')">選手一覧</button>
+        <button class="tab-btn" onclick="switchTab('tab-court')">作戦ボード</button>
+        <button class="tab-btn" onclick="switchTab('tab-flick')">記録</button>
+        <button class="tab-btn" onclick="switchTab('tab-history')">過去データ</button>
+        <button class="tab-btn" onclick="switchTab('tab-issues')">チームの課題</button>
+    </div>
+
+    <div class="container">
+        <!-- タブ1：選手登録 -->
+        <div class="card tab-card active" id="tab-register">
+            <h2>選手登録</h2>
+            <div class="form-group">
+                <label>背番号 (1～99)<span class="required">*</span></label>
+                <input type="number" id="p-number" min="1" max="99" placeholder="例: 4">
+            </div>
+            <div class="form-group">
+                <label>名前 (20文字以内)<span class="required">*</span></label>
+                <input type="text" id="p-name" maxlength="20" placeholder="例: 山田 太郎">
+            </div>
+            <div class="form-group">
+                <label>選手画像</label>
+                <input type="file" id="p-image" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label>身長 (120～220cm)<span class="required">*</span></label>
+                <input type="number" id="p-height" min="120" max="220" placeholder="例: 175">
+            </div>
+            <div class="form-group">
+                <label>調子</label>
+                <select id="p-condition">
+                    <option value="ギンギン">🔥 ギンギン</option>
+                    <option value="絶好調">😆 絶好調</option>
+                    <option value="好調">🙂 好調</option>
+                    <option value="普通" selected>😐 普通</option>
+                    <option value="不調">🙁 不調</option>
+                    <option value="絶不調">😫 絶不調</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>メインポジション<span class="required">*</span></label>
+                <select id="p-position" class="pos-select" onchange="updatePlayerPosSelects('p-')"></select>
+            </div>
+            <div class="form-group">
+                <label>サブポジション 1</label>
+                <select id="p-sub1" class="pos-select-sub" onchange="updatePlayerPosSelects('p-')"></select>
+            </div>
+            <div class="form-group">
+                <label>サブポジション 2</label>
+                <select id="p-sub2" class="pos-select-sub" onchange="updatePlayerPosSelects('p-')"></select>
+            </div>
+            <div class="form-group">
+                <label>メモ</label>
+                <textarea id="p-memo" placeholder="プレイスタイルや注意点など"></textarea>
+            </div>
+            <button class="action-btn" onclick="addPlayer()">選手を追加</button>
+        </div>
+
+        <!-- タブ2：選手一覧 -->
+        <div class="card tab-card" id="tab-list">
+            <h2>選手一覧</h2>
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:8px;">
+                ※選手の名前やアイコンをタップすると、これまでの全試合を通じた通算成績データを確認できます。
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>背番号</th>
+                            <th>名前</th>
+                            <th>身長</th>
+                            <th>調子</th>
+                            <th>ポジション</th>
+                            <th>修正</th>
+                        </tr>
+                    </thead>
+                    <tbody id="player-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- タブ3：作戦ボード -->
+        <div class="card tab-card" id="tab-court">
+            <h2>作戦ボード</h2>
+            <div class="ipad-grid-layout">
+                <div>
+                    <h3 style="font-size:1rem; margin-top:0; margin-bottom:8px;">スタメン選出 (9人)</h3>
+                    <div class="starter-select-grid" id="starter-selects"></div>
+                </div>
+                <div>
+                    <div style="font-size:0.8rem; color:#64748b; margin-bottom:8px;">
+                        ※丸アイコンやボールをドラッグして移動できます。
+                    </div>
+                    <div class="court-wrapper" id="court-canvas">
+                        <div class="court-label" style="top: 10px;">相手コート</div>
+                        <div class="net-line"></div>
+                        <div class="court-label" style="bottom: 10px;">自チームコート</div>
+                        
+                        <div class="volleyball-pin" id="ball-pin">
+                            <svg viewBox="0 0 100 100">
+                                <defs>
+                                    <clipPath id="ball-clip">
+                                        <circle cx="50" cy="50" r="47"/>
+                                    </clipPath>
+                                    <radialGradient id="sphere-shade" cx="35%" cy="30%" r="70%">
+                                        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.45"/>
+                                        <stop offset="55%" stop-color="#ffffff" stop-opacity="0"/>
+                                        <stop offset="85%" stop-color="#0f172a" stop-opacity="0.25"/>
+                                        <stop offset="100%" stop-color="#020617" stop-opacity="0.65"/>
+                                    </radialGradient>
+                                </defs>
+                                <g clip-path="url(#ball-clip)">
+                                    <rect x="0" y="0" width="100" height="100" fill="#facc15"/>
+                                    <path d="M -10 -5 C 20 35, 80 15, 110 -10 L 110 35 C 70 65, 30 35, -10 20 Z" fill="#1e3a8a"/>
+                                    <path d="M -10 40 C 35 70, 75 45, 110 35 L 110 75 C 65 105, 25 75, -10 60 Z" fill="#2563eb"/>
+                                    <path d="M -10 80 C 40 105, 80 90, 110 75 L 110 110 L -10 110 Z" fill="#1e3a8a"/>
+
+                                    <path d="M -10 -5 C 20 35, 80 15, 110 -10" fill="none" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round"/>
+                                    <path d="M -10 20 C 30 35, 70 65, 110 35" fill="none" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round"/>
+                                    <path d="M -10 40 C 35 70, 75 45, 110 35" fill="none" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round"/>
+                                    <path d="M -10 60 C 25 75, 65 105, 110 75" fill="none" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round"/>
+                                    <path d="M -10 80 C 40 105, 80 90, 110 75" fill="none" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round"/>
+
+                                    <circle cx="50" cy="50" r="47" fill="url(#sphere-shade)"/>
+                                </g>
+                                <circle cx="50" cy="50" r="47" fill="none" stroke="#0f172a" stroke-width="4.5"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- タブ4：記録専用 -->
+        <div class="card tab-card" id="tab-flick">
+            <h2>記録</h2>
+
+            <div class="match-data-panel">
+                <label style="color:#1e293b; font-size:0.9rem;">現在の記録データを保存・リセット</label>
+                <div class="panel-row">
+                    <input type="text" id="match-name-input" placeholder="試合名（例: 秋季大会 1回戦）" style="font-size:0.85rem;">
+                    <button class="btn-save-match" onclick="saveMatchData()">保存</button>
+                    <button class="btn-reset-stats" onclick="resetCurrentStats()">リセット</button>
+                </div>
+            </div>
+
+            <div id="current-team-summary" class="team-summary-box"></div>
+
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:12px;">
+                ※選手ボタン上でフリック ➔ <b>上</b>: スパイク / <b>左</b>: ブロック / <b>右</b>: レセプション / <b>下</b>: サーブ<br>
+                ※フリックせずタップ ➔ 現在の試合の成績を表示
+            </div>
+
+            <div class="grid-court-container" id="flick-grid-court">
+                <div class="grid-court-section">
+                    <span class="grid-section-title">前衛 6人</span>
+                    <div class="grid-row-6" id="flick-front-cards"></div>
+                </div>
+                <div class="grid-court-section">
+                    <span class="grid-section-title">後衛 3人</span>
+                    <div class="grid-row-3" id="flick-back-cards"></div>
+                </div>
+
+                <div class="flick-pop-menu" id="flick-pop">
+                    <div class="flick-title" id="flick-mode-title">スパイク</div>
+                    <div class="flick-opt left" id="opt-left">継続</div>
+                    <div class="flick-opt top" id="opt-top">得点</div>
+                    <div class="flick-opt right" id="opt-right">ミス</div>
+                    <div class="flick-opt bottom" id="opt-bottom">その他ミス</div>
+                </div>
+            </div>
+
+            <h3 style="font-size:0.9rem; margin-top:16px; margin-bottom:6px; color:#334155;">【前衛 6人】（左から：レフト、レフトセミ、クイック、セッター、ライトセミ、ライト）</h3>
+            <div class="flick-front-grid" id="flick-starter-front-selects"></div>
+
+            <h3 style="font-size:0.9rem; margin-top:10px; margin-bottom:6px; color:#334155;">【後衛 3人】（左から：レフトバック、センターバック、ライトバック）</h3>
+            <div class="flick-back-grid" id="flick-starter-back-selects"></div>
+        </div>
+
+        <!-- タブ5：過去データ閲覧専用 -->
+        <div class="card tab-card" id="tab-history">
+            <h2>過去データ（試合履歴）</h2>
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:12px;">
+                保存した過去の試合データを選択すると、出場選手の成績データを一覧で直ちに閲覧できます。
+            </div>
+
+            <div class="form-group">
+                <label>保存済み試合を選択</label>
+                <select id="saved-matches-select" style="font-size:0.9rem;" onchange="loadMatchData(this.value)">
+                    <option value="">-- 試合データを選択してください --</option>
+                </select>
+            </div>
+
+            <div id="selected-match-details" style="margin-top:15px; display:none;">
+                <div class="selected-match-header-row">
+                    <div id="match-meta-header" style="font-size:1rem; font-weight:bold; color:#1e293b;"></div>
+                    <button class="btn-del" style="padding:8px 14px; font-size:0.8rem;" onclick="deleteSelectedMatchData()">この試合データを削除</button>
+                </div>
+
+                <div id="history-team-summary" class="team-summary-box"></div>
+
+                <div id="history-top3-summary" class="top3-section-box"></div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>背番号</th>
+                                <th>名前</th>
+                                <th>スパイク(決定率)</th>
+                                <th>有効サーブ率</th>
+                                <th>ブロック</th>
+                                <th>レセプション</th>
+                                <th>その他ミス</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-player-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- タブ6：チームの課題 -->
+        <div class="card tab-card" id="tab-issues">
+            <h2>チームの課題管理・弱点分析</h2>
+            
+            <div class="issue-grid">
+                <div>
+                    <h3 style="font-size:1rem; margin-top:0; margin-bottom:12px; color:#1e293b;">新規課題の登録</h3>
+                    <div class="form-group">
+                        <label>課題タイトル<span class="required">*</span></label>
+                        <input type="text" id="issue-title-input" placeholder="例: Bパス時の2段トス精度向上">
+                    </div>
+                    <div class="form-group">
+                        <label>カテゴリ</label>
+                        <select id="issue-category-select">
+                            <option value="スパイク">💥 スパイク</option>
+                            <option value="サーブ">🚀 サーブ</option>
+                            <option value="レセプション">🛡 レセプション</option>
+                            <option value="ブロック">🖐 ブロック</option>
+                            <option value="連携・コンビ">🔄 連携・コンビ</option>
+                            <option value="その他">📌 その他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>優先度</label>
+                        <select id="issue-priority-select">
+                            <option value="high">🔴 高（早急に改善）</option>
+                            <option value="mid" selected>🟡 中（通常の練習）</option>
+                            <option value="low">🟢 低（継続アプローチ）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>課題の詳細・具体的な練習対策</label>
+                        <textarea id="issue-desc-input" placeholder="例: レセプション乱れ時のレフトへのバックトス・ハイトス練習を中心に行う"></textarea>
+                    </div>
+                    <button class="action-btn" onclick="addIssue()">課題を追加する</button>
+
+                    <div id="team-auto-issues-box" class="ai-advisor-box" style="margin-top:20px;">
+                        <!-- 全試合通算のチーム自動弱点分析結果がここに入ります -->
+                    </div>
+                </div>
+
+                <div>
+                    <h3 style="font-size:1rem; margin-top:0; margin-bottom:12px; color:#1e293b;">登録済み課題一覧</h3>
+                    <div id="issues-list-container">
+                        <!-- 課題カード一覧 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="flick-toast" id="flick-toast"></div>
+
+<!-- 編集モーダル -->
+<div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+        <h2>選手情報の編集</h2>
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+            <label>背番号<span class="required">*</span></label>
+            <input type="number" id="edit-number">
+        </div>
+        <div class="form-group">
+            <label>名前<span class="required">*</span></label>
+            <input type="text" id="edit-name">
+        </div>
+        <div class="form-group">
+            <label>選手画像 (変更する場合のみ)</label>
+            <input type="file" id="edit-image" accept="image/*">
+            <button type="button" class="reset-photo-btn" onclick="resetPlayerPhoto()">画像を削除・リセット</button>
+        </div>
+        <div class="form-group">
+            <label>身長 (cm)<span class="required">*</span></label>
+            <input type="number" id="edit-height">
+        </div>
+        <div class="form-group">
+            <label>調子</label>
+            <select id="edit-condition">
+                <option value="ギンギン">🔥 ギンギン</option>
+                <option value="絶好調">😆 絶好調</option>
+                <option value="好調">🙂 好調</option>
+                <option value="普通">😐 普通</option>
+                <option value="不調">🙁 不調</option>
+                <option value="絶不調">😫 絶不調</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>メインポジション<span class="required">*</span></label>
+            <select id="edit-position" class="pos-select" onchange="updatePlayerPosSelects('edit-')"></select>
+        </div>
+        <div class="form-group">
+            <label>サブポジション 1</label>
+            <select id="edit-sub1" class="pos-select-sub" onchange="updatePlayerPosSelects('edit-')"></select>
+        </div>
+        <div class="form-group">
+            <label>サブポジション 2</label>
+            <select id="edit-sub2" class="pos-select-sub" onchange="updatePlayerPosSelects('edit-')"></select>
+        </div>
+        <div class="form-group">
+            <label>メモ</label>
+            <textarea id="edit-memo" placeholder="プレイスタイルや注意点など"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="action-btn" onclick="updatePlayer()">保存する</button>
+            <button class="btn-cancel" onclick="closeModal('edit-modal')">キャンセル</button>
+        </div>
+    </div>
+</div>
+
+<!-- 課題編集モーダル -->
+<div class="modal-overlay" id="edit-issue-modal">
+    <div class="modal">
+        <h2>チーム課題の編集</h2>
+        <input type="hidden" id="edit-issue-id">
+        <div class="form-group">
+            <label>課題タイトル<span class="required">*</span></label>
+            <input type="text" id="edit-issue-title">
+        </div>
+        <div class="form-group">
+            <label>カテゴリ</label>
+            <select id="edit-issue-category">
+                <option value="スパイク">💥 スパイク</option>
+                <option value="サーブ">🚀 サーブ</option>
+                <option value="レセプション">🛡 レセプション</option>
+                <option value="ブロック">🖐 ブロック</option>
+                <option value="連携・コンビ">🔄 連携・コンビ</option>
+                <option value="その他">📌 その他</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>優先度</label>
+            <select id="edit-issue-priority">
+                <option value="high">🔴 高（早急に改善）</option>
+                <option value="mid">🟡 中（通常の練習）</option>
+                <option value="low">🟢 低（継続アプローチ）</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>課題の詳細・具体的な練習対策</label>
+            <textarea id="edit-issue-desc"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="action-btn" onclick="updateIssue()">変更を保存する</button>
+            <button class="btn-cancel" onclick="closeModal('edit-issue-modal')">キャンセル</button>
+        </div>
+    </div>
+</div>
+
+<!-- 選手詳細カードモーダル -->
+<div class="modal-overlay" id="info-modal">
+    <div class="modal">
+        <h2 id="info-title" style="text-align:center; margin-bottom:15px;">選手詳細</h2>
+        <div id="info-body"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal('info-modal')">閉じる</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const POSITIONS = [
+        "レフト", "レフトセミ", "クイック", "セッター", "ライトセミ", 
+        "ライト", "ハーフセンター", "レフトバック", "センターバック", "ライトバック"
+    ];
+
+    const STARTER_LABELS = [
+        "レフト", "レフトセミ", "クイック",
+        "セッター", "ライトセミ", "ライト",
+        "レフトバック", "センターバック", "ライトバック"
+    ];
+
+    const FLICK_STARTER_LABELS = [
+        "レフト", "レフトセミ", "クイック", "セッター", "ライトセミ", "ライト",
+        "レフトバック", "センターバック", "ライトバック"
+    ];
+
+    const CONDITION_EMOJI = {
+        "ギンギン": "🔥",
+        "絶好調": "😆",
+        "好調": "🙂",
+        "普通": "😐",
+        "不調": "🙁",
+        "絶不調": "😫"
+    };
+
+    const DEFAULT_POSITIONS = [
+        { x: 20, y: 60 }, { x: 50, y: 60 }, { x: 80, y: 60 },
+        { x: 20, y: 75 }, { x: 50, y: 75 }, { x: 80, y: 75 },
+        { x: 20, y: 90 }, { x: 50, y: 90 }, { x: 80, y: 90 }
+    ];
+
+    let players = JSON.parse(localStorage.getItem('vball9_players')) || [];
+    let starters = JSON.parse(localStorage.getItem('vball9_starters')) || Array(9).fill("");
+    let pinPositions = JSON.parse(localStorage.getItem('vball9_pin_positions')) || DEFAULT_POSITIONS;
+    let ballPosition = JSON.parse(localStorage.getItem('vball9_ball_position')) || { x: 50, y: 50 };
+
+    let flickStarters = JSON.parse(localStorage.getItem('vball9_flick_starters')) || Array(9).fill("");
+    let savedMatches = JSON.parse(localStorage.getItem('vball9_saved_matches')) || [];
+    let teamIssues = JSON.parse(localStorage.getItem('vball9_team_issues')) || [];
+    let currentSelectedMatchId = null;
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-card').forEach(card => card.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+        document.getElementById(tabId).classList.add('active');
+
+        const indexMap = { 'tab-register': 0, 'tab-list': 1, 'tab-court': 2, 'tab-flick': 3, 'tab-history': 4, 'tab-issues': 5 };
+        if (indexMap[tabId] !== undefined) {
+            document.querySelectorAll('.tab-btn')[indexMap[tabId]].classList.add('active');
+        }
+
+        if (tabId === 'tab-flick') {
+            renderFlickCourt();
+            renderFlickStartersUI();
+            renderTeamSummary(players, 'current-team-summary', '📊 チーム全体スタッツ（現在の試合）');
+        } else if (tabId === 'tab-history') {
+            renderSavedMatchesSelect();
+        } else if (tabId === 'tab-issues') {
+            renderIssuesUI();
+        }
+    }
+
+    function saveStorage() {
+        localStorage.setItem('vball9_players', JSON.stringify(players));
+        localStorage.setItem('vball9_starters', JSON.stringify(starters));
+        localStorage.setItem('vball9_pin_positions', JSON.stringify(pinPositions));
+        localStorage.setItem('vball9_ball_position', JSON.stringify(ballPosition));
+        localStorage.setItem('vball9_flick_starters', JSON.stringify(flickStarters));
+        localStorage.setItem('vball9_saved_matches', JSON.stringify(savedMatches));
+        localStorage.setItem('vball9_team_issues', JSON.stringify(teamIssues));
+    }
+
+    function initStatsObj() {
+        return {
+            spike: { success: 0, continue: 0, error: 0 },
+            serve: { success: 0, continue: 0, error: 0 },
+            block: { success: 0, continue: 0, error: 0 },
+            reception: { success: 0, continue: 0, error: 0 },
+            otherError: 0
+        };
+    }
+
+    function resetCurrentStats(isSilent = false) {
+        if (!isSilent) {
+            if (!confirm("現在の全選手の記録データをリセット（0に初期化）してよろしいですか？")) return;
+        }
+        
+        players.forEach(p => { p.stats = initStatsObj(); });
+        saveStorage();
+        renderFlickCourt();
+        renderTeamSummary(players, 'current-team-summary', '📊 チーム全体スタッツ（現在の試合）');
+        if (!isSilent) showToast("全選手の記録をリセットしました");
+    }
+
+    function saveMatchData() {
+        const inputEl = document.getElementById('match-name-input');
+        const matchName = inputEl.value.trim();
+
+        if (!matchName) {
+            alert("試合名を入力してください（例: 秋季大会 1回戦）。");
+            return;
+        }
+
+        const todayStr = new Date().toLocaleDateString('ja-JP');
+        const isDuplicate = savedMatches.some(m => m.name === matchName);
+        if (isDuplicate) {
+            alert(`同じ名前「${matchName}」の試合データが既に存在します。\n別の試合名で保存してください。`);
+            return;
+        }
+
+        const matchRecord = {
+            id: Date.now(),
+            name: matchName,
+            date: todayStr,
+            playersData: JSON.parse(JSON.stringify(players)),
+            flickStarters: flickStarters.map(s => String(s || ""))
+        };
+
+        savedMatches.push(matchRecord);
+        saveStorage();
+        inputEl.value = '';
+        resetCurrentStats(true);
+        showToast(`「${matchName}」を保存し、記録をリセットしました`);
+    }
+
+    function loadMatchData(matchId) {
+        const detailsContainer = document.getElementById('selected-match-details');
+        if (!matchId) {
+            currentSelectedMatchId = null;
+            if (detailsContainer) detailsContainer.style.display = 'none';
+            return;
+        }
+
+        const match = savedMatches.find(m => m.id == matchId);
+        if (!match) return;
+
+        currentSelectedMatchId = match.id;
+        renderMatchPlayerTable(match);
+        showToast(`「${match.name}」を表示しました`);
+    }
+
+    function renderTeamSummary(targetPlayersData, containerId, titleText) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        let totalSpikeSucc = 0, totalSpikeAll = 0;
+        let totalServeEffective = 0, totalServeAll = 0;
+        let totalBlockSucc = 0, totalBlock1Touch = 0;
+        let totalRecSucc = 0, totalRecAll = 0;
+        let totalOtherErr = 0;
+
+        targetPlayersData.forEach(p => {
+            const st = p.stats || initStatsObj();
+            totalSpikeSucc += st.spike.success || 0;
+            totalSpikeAll += (st.spike.success + st.spike.continue + st.spike.error) || 0;
+
+            // 有効サーブ数（分子） = エース/崩す(success) のみ
+            totalServeEffective += (st.serve.success || 0);
+            // 打数（分母） = エース/崩す + チャンスサーブ(continue) + ミス(error)
+            totalServeAll += (st.serve.success + st.serve.continue + st.serve.error) || 0;
+
+            totalBlockSucc += st.block.success || 0;
+            totalBlock1Touch += st.block.continue || 0;
+
+            totalRecSucc += st.reception.success || 0;
+            totalRecAll += (st.reception.success + st.reception.continue + st.reception.error) || 0;
+
+            totalOtherErr += st.otherError || 0;
+        });
+
+        const spikeRateStr = calcRate(totalSpikeSucc, totalSpikeAll);
+        const serveEffectiveRateStr = calcRate(totalServeEffective, totalServeAll);
+        const recRateStr = calcRate(totalRecSucc, totalRecAll);
+
+        container.innerHTML = `
+            <div class="team-summary-title">${titleText}</div>
+            <div class="team-summary-grid">
+                <div class="team-stat-card">
+                    <div class="team-stat-label">スパイク決定率</div>
+                    <div class="team-stat-val">${spikeRateStr}</div>
+                    <div class="team-stat-sub">（${totalSpikeSucc}/${totalSpikeAll}本）</div>
+                </div>
+                <div class="team-stat-card">
+                    <div class="team-stat-label">有効サーブ率</div>
+                    <div class="team-stat-val">${serveEffectiveRateStr}</div>
+                    <div class="team-stat-sub">（有効${totalServeEffective}/全${totalServeAll}本）</div>
+                </div>
+                <div class="team-stat-card">
+                    <div class="team-stat-label">ブロック総得点</div>
+                    <div class="team-stat-val">${totalBlockSucc}本</div>
+                    <div class="team-stat-sub">（ワンタッチ:${totalBlock1Touch}本）</div>
+                </div>
+                <div class="team-stat-card">
+                    <div class="team-stat-label">レセプションA.Bパス率</div>
+                    <div class="team-stat-val">${recRateStr}</div>
+                    <div class="team-stat-sub">（A.Bパス${totalRecSucc}/${totalRecAll}本）</div>
+                </div>
+                <div class="team-stat-card">
+                    <div class="team-stat-label">その他ミス</div>
+                    <div class="team-stat-val">${totalOtherErr}本</div>
+                    <div class="team-stat-sub">（コンビミス・反則等）</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderMatchTop3(targetPlayersData, matchStarters, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const setterPlayerIds = new Set();
+        matchStarters.forEach((pId, idx) => {
+            if (pId && FLICK_STARTER_LABELS[idx] === 'セッター') {
+                setterPlayerIds.add(String(pId));
+            }
+        });
+
+        const spikeList = targetPlayersData
+            .filter(p => !setterPlayerIds.has(String(p.id)))
+            .map(p => {
+                const st = p.stats || initStatsObj();
+                const total = st.spike.success + st.spike.continue + st.spike.error;
+                const rate = total > 0 ? (st.spike.success / total) * 100 : -1;
+                return { name: p.name, number: p.number, rate: rate, succ: st.spike.success, total: total };
+            })
+            .filter(item => item.total > 0 && item.rate >= 0)
+            .sort((a, b) => b.rate - a.rate || b.succ - a.succ);
+
+        // 有効サーブ率ランキング (分子: エース/崩す[success]のみ, 分母: エース+チャンス+ミス)
+        const serveList = targetPlayersData
+            .map(p => {
+                const st = p.stats || initStatsObj();
+                const total = st.serve.success + st.serve.continue + st.serve.error;
+                const effective = st.serve.success || 0;
+                const rate = total > 0 ? (effective / total) * 100 : -1;
+                return { name: p.name, number: p.number, rate: rate, effective: effective, total: total };
+            })
+            .filter(item => item.total > 0 && item.rate >= 0)
+            .sort((a, b) => b.rate - a.rate || b.effective - a.effective);
+
+        const blockList = targetPlayersData
+            .map(p => {
+                const st = p.stats || initStatsObj();
+                return { name: p.name, number: p.number, count: st.block.success || 0 };
+            })
+            .filter(item => item.count > 0)
+            .sort((a, b) => b.count - a.count);
+
+        const recList = targetPlayersData
+            .map(p => {
+                const st = p.stats || initStatsObj();
+                const total = st.reception.success + st.reception.continue + st.reception.error;
+                const rate = total > 0 ? (st.reception.success / total) * 100 : -1;
+                return { name: p.name, number: p.number, rate: rate, succ: st.reception.success, total: total };
+            })
+            .filter(item => item.total > 0 && item.rate >= 0)
+            .sort((a, b) => b.rate - a.rate || b.succ - a.succ);
+
+        function buildTop3ListHtml(list, type) {
+            if (!list || list.length === 0) {
+                return '<li class="top3-item" style="color:#94a3b8; justify-content:center;">記録なし</li>';
+            }
+            const top3 = list.slice(0, 3);
+            let html = '';
+            top3.forEach((item, idx) => {
+                const rankClass = `rank-${idx + 1}`;
+                let valStr = '';
+                if (type === 'rate') {
+                    valStr = `${item.rate.toFixed(1)}% <span style="font-size:0.65rem; color:#64748b;">(${item.succ}/${item.total})</span>`;
+                } else if (type === 'serveRate') {
+                    valStr = `${item.rate.toFixed(1)}% <span style="font-size:0.65rem; color:#64748b;">(${item.effective}/${item.total})</span>`;
+                } else if (type === 'count') {
+                    valStr = `${item.count}本`;
+                }
+                html += `
+                    <li class="top3-item">
+                        <span class="top3-rank ${rankClass}">${idx + 1}位</span>
+                        <span class="top3-pname">#${item.number} ${item.name}</span>
+                        <span class="top3-val">${valStr}</span>
+                    </li>
+                `;
+            });
+            return html;
+        }
+
+        container.innerHTML = `
+            <div class="top3-section-title">🏆 この試合の部門別トップ3</div>
+            <div class="top3-grid">
+                <div class="top3-card">
+                    <div class="top3-card-header">💥 スパイク決定率</div>
+                    <ul class="top3-list">${buildTop3ListHtml(spikeList, 'rate')}</ul>
+                </div>
+                <div class="top3-card">
+                    <div class="top3-card-header">🚀 有効サーブ率</div>
+                    <ul class="top3-list">${buildTop3ListHtml(serveList, 'serveRate')}</ul>
+                </div>
+                <div class="top3-card">
+                    <div class="top3-card-header">🖐 ブロック得点数</div>
+                    <ul class="top3-list">${buildTop3ListHtml(blockList, 'count')}</ul>
+                </div>
+                <div class="top3-card">
+                    <div class="top3-card-header">🛡 レセプションA.Bパス率</div>
+                    <ul class="top3-list">${buildTop3ListHtml(recList, 'rate')}</ul>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderMatchPlayerTable(match) {
+        const detailsContainer = document.getElementById('selected-match-details');
+        const headerEl = document.getElementById('match-meta-header');
+        const listEl = document.getElementById('history-player-list');
+        if (!detailsContainer || !headerEl || !listEl) return;
+
+        headerEl.textContent = `閲覧中データ: ${match.name}`;
+        listEl.innerHTML = '';
+
+        const matchStarters = match.flickStarters || [];
+
+        const activeStarterSet = new Set(
+            matchStarters
+                .filter(id => id !== undefined && id !== null && String(id).trim() !== "")
+                .map(id => String(id))
+        );
+
+        const activePlayersData = (activeStarterSet.size > 0)
+            ? match.playersData.filter(p => activeStarterSet.has(String(p.id)))
+            : match.playersData;
+
+        renderTeamSummary(match.playersData, 'history-team-summary', '📊 チーム全体スタッツ（この試合）');
+        renderMatchTop3(match.playersData, matchStarters, 'history-top3-summary');
+
+        let teamSpikeTotal = 0;
+        const posSpikeCounts = {};
+
+        matchStarters.forEach((pId, idx) => {
+            if (!pId) return;
+            const p = match.playersData.find(player => String(player.id) === String(pId));
+            if (!p) return;
+
+            const pst = p.stats || initStatsObj();
+            const pSpikeTotal = pst.spike.success + pst.spike.continue + pst.spike.error;
+
+            if (pSpikeTotal > 0) {
+                const posName = FLICK_STARTER_LABELS[idx] || p.position || 'その他';
+                posSpikeCounts[posName] = (posSpikeCounts[posName] || 0) + pSpikeTotal;
+                teamSpikeTotal += pSpikeTotal;
+            }
+        });
+
+        activePlayersData.forEach(p => {
+            const st = p.stats || initStatsObj();
+            const photoImg = p.photo ? `<img src="${p.photo}" class="list-photo" draggable="false">` : '';
+
+            const isSetterInMatch = matchStarters.some((sId, idx) => String(sId) === String(p.id) && FLICK_STARTER_LABELS[idx] === 'セッター');
+            const tr = document.createElement('tr');
+
+            if (isSetterInMatch) {
+                let tossBadgesHtml = '';
+                if (teamSpikeTotal === 0) {
+                    tossBadgesHtml = '<span style="font-size:0.75rem; color:#94a3b8;">アタック記録なし</span>';
+                } else {
+                    Object.keys(posSpikeCounts).forEach(posName => {
+                        const cnt = posSpikeCounts[posName];
+                        const pct = (cnt / teamSpikeTotal) * 100;
+                        const pctStr = pct.toFixed(1);
+                        let badgeClass = (pct <= 10) ? "cell-warn" : "";
+                        tossBadgesHtml += `<span class="setter-toss-badge ${badgeClass}">${posName}: ${pctStr}% (${cnt}本)</span>`;
+                    });
+                }
+
+                tr.innerHTML = `
+                    <td><b>${p.number}</b></td>
+                    <td>${photoImg}${p.name} <span class="badge" style="background:#2563eb;">S</span></td>
+                    <td colspan="5">
+                        <div style="font-size:0.75rem; font-weight:bold; color:#1e293b; margin-bottom:2px;">トス振り分け割合 (総トス数: ${teamSpikeTotal}本)</div>
+                        <div>${tossBadgesHtml}</div>
+                    </td>
+                `;
+            } else {
+                const spikeTotal = st.spike.success + st.spike.continue + st.spike.error;
+                const spikePctNum = spikeTotal > 0 ? (st.spike.success / spikeTotal) * 100 : 0;
+                const spikeRateStr = calcRate(st.spike.success, spikeTotal);
+
+                let spikeClass = "";
+                if (spikeTotal > 0) {
+                    if (spikePctNum <= 30) spikeClass = "cell-warn";
+                    else if (spikePctNum >= 60) spikeClass = "cell-nice";
+                }
+
+                // 有効サーブ率計算: 分子 = エース/崩す(success), 分母 = エース/崩す + チャンスサーブ + ミス
+                const serveTotal = st.serve.success + st.serve.continue + st.serve.error;
+                const serveEffective = st.serve.success || 0;
+                const serveEffectiveRateStr = calcRate(serveEffective, serveTotal);
+                const servePctNum = serveTotal > 0 ? (serveEffective / serveTotal) * 100 : 0;
+                
+                // 有効サーブ率のハイライト条件 (60%超で緑, 20%未満で赤)
+                let serveClass = "";
+                if (serveTotal > 0) {
+                    if (servePctNum > 60) serveClass = "cell-nice";
+                    else if (servePctNum < 20) serveClass = "cell-warn";
+                }
+
+                let blockClass = (st.block.success >= 3) ? "cell-nice" : "";
+
+                const recTotal = st.reception.success + st.reception.continue + st.reception.error;
+                const recPctNum = recTotal > 0 ? (st.reception.success / recTotal) * 100 : 0;
+                const recRateStr = calcRate(st.reception.success, recTotal);
+
+                let recClass = "";
+                if (recTotal > 0) {
+                    if (recPctNum <= 60) recClass = "cell-warn";
+                    else if (recPctNum >= 80) recClass = "cell-nice";
+                }
+
+                // その他ミスハイライト条件 (3本以上で赤)
+                const otherErr = st.otherError || 0;
+                let otherErrClass = (otherErr >= 3) ? "cell-warn" : "";
+
+                tr.innerHTML = `
+                    <td><b>${p.number}</b></td>
+                    <td>${photoImg}${p.name}</td>
+                    <td class="${spikeClass}"><b>${spikeRateStr}</b><br><span style="font-size:0.7rem;">(${st.spike.success}/${spikeTotal})</span></td>
+                    <td class="${serveClass}"><b>${serveEffectiveRateStr}</b><br><span style="font-size:0.7rem;">(有効:${serveEffective}/全${serveTotal})</span></td>
+                    <td class="${blockClass}"><b>${st.block.success}本</b><br><span style="font-size:0.7rem;">(ワンタッチ:${st.block.continue})</span></td>
+                    <td class="${recClass}"><b>${recRateStr}</b><br><span style="font-size:0.7rem;">(A.Bパス:${st.reception.success}/${recTotal})</span></td>
+                    <td class="${otherErrClass}"><b>${otherErr}本</b></td>
+                `;
+            }
+
+            listEl.appendChild(tr);
+        });
+
+        detailsContainer.style.display = 'block';
+    }
+
+    function deleteSelectedMatchData() {
+        if (!currentSelectedMatchId) return;
+
+        const match = savedMatches.find(m => m.id == currentSelectedMatchId);
+        const matchName = match ? match.name : '';
+
+        if (!confirm(`閲覧中の過去試合データ「${matchName}」を削除してもよろしいですか？`)) return;
+
+        savedMatches = savedMatches.filter(m => m.id != currentSelectedMatchId);
+        currentSelectedMatchId = null;
+
+        saveStorage();
+        renderSavedMatchesSelect();
+
+        const detailsContainer = document.getElementById('selected-match-details');
+        if (detailsContainer) detailsContainer.style.display = 'none';
+
+        showToast("試合データを削除しました");
+    }
+
+    function renderSavedMatchesSelect() {
+        const selectEl = document.getElementById('saved-matches-select');
+        if (!selectEl) return;
+
+        let html = `<option value="">-- 試合データを選択してください --</option>`;
+        savedMatches.forEach(m => {
+            const isSelected = m.id == currentSelectedMatchId;
+            html += `<option value="${m.id}" ${isSelected ? 'selected' : ''}>${m.name}</option>`;
+        });
+        selectEl.innerHTML = html;
+    }
+
+    /* チームの課題管理タブのUI描画 */
+    function renderIssuesUI() {
+        const container = document.getElementById('issues-list-container');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        if (teamIssues.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:30px; font-weight:bold;">現在登録されている課題はありません</div>';
+        } else {
+            teamIssues.forEach(issue => {
+                const card = document.createElement('div');
+                card.className = `issue-card priority-${issue.priority}`;
+                
+                let statusClass = 'status-open';
+                let statusLabel = '🔴 未着手';
+                if (issue.status === 'wip') {
+                    statusClass = 'status-wip';
+                    statusLabel = '🟡 対応中';
+                } else if (issue.status === 'done') {
+                    statusClass = 'status-done';
+                    statusLabel = '🟢 完了';
+                }
+
+                card.innerHTML = `
+                    <div class="issue-header">
+                        <span class="issue-title">${issue.title}</span>
+                        <span class="issue-category-badge">${issue.category}</span>
+                    </div>
+                    <div class="issue-body">${issue.desc || '（詳細記述なし）'}</div>
+                    <div class="issue-footer">
+                        <span>状態: <span class="status-badge ${statusClass}" onclick="toggleIssueStatus('${issue.id}')">${statusLabel}</span></span>
+                        <div>
+                            <button class="btn-edit" style="font-size:0.75rem; padding:4px 8px; margin-right:4px;" onclick="openEditIssueModal('${issue.id}')">編集</button>
+                            <button class="btn-del" style="font-size:0.75rem; padding:4px 8px;" onclick="deleteIssue('${issue.id}')">削除</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        renderTeamAutoAnalysis();
+    }
+
+    function addIssue() {
+        const titleEl = document.getElementById('issue-title-input');
+        const catEl = document.getElementById('issue-category-select');
+        const priorityEl = document.getElementById('issue-priority-select');
+        const descEl = document.getElementById('issue-desc-input');
+
+        const title = titleEl.value.trim();
+        if (!title) {
+            alert('課題タイトルを入力してください。');
+            return;
+        }
+
+        teamIssues.push({
+            id: String(Date.now()),
+            title: title,
+            category: catEl.value,
+            priority: priorityEl.value,
+            desc: descEl.value.trim(),
+            status: 'open'
+        });
+
+        titleEl.value = '';
+        descEl.value = '';
+
+        saveStorage();
+        renderIssuesUI();
+        showToast('チームの課題を登録しました');
+    }
+
+    function openEditIssueModal(issueId) {
+        const issue = teamIssues.find(i => String(i.id) === String(issueId));
+        if (!issue) return;
+
+        document.getElementById('edit-issue-id').value = issue.id;
+        document.getElementById('edit-issue-title').value = issue.title;
+        document.getElementById('edit-issue-category').value = issue.category || 'スパイク';
+        document.getElementById('edit-issue-priority').value = issue.priority || 'mid';
+        document.getElementById('edit-issue-desc').value = issue.desc || '';
+
+        document.getElementById('edit-issue-modal').style.display = 'flex';
+    }
+
+    function updateIssue() {
+        const id = document.getElementById('edit-issue-id').value;
+        const issue = teamIssues.find(i => String(i.id) === String(id));
+
+        if (issue) {
+            const title = document.getElementById('edit-issue-title').value.trim();
+            if (!title) {
+                alert('課題タイトルを入力してください。');
+                return;
+            }
+
+            issue.title = title;
+            issue.category = document.getElementById('edit-issue-category').value;
+            issue.priority = document.getElementById('edit-issue-priority').value;
+            issue.desc = document.getElementById('edit-issue-desc').value.trim();
+
+            saveStorage();
+            renderIssuesUI();
+            closeModal('edit-issue-modal');
+            showToast('課題を更新しました');
+        }
+    }
+
+    function toggleIssueStatus(issueId) {
+        const issue = teamIssues.find(i => String(i.id) === String(issueId));
+        if (!issue) return;
+
+        if (issue.status === 'open') issue.status = 'wip';
+        else if (issue.status === 'wip') issue.status = 'done';
+        else issue.status = 'open';
+
+        saveStorage();
+        renderIssuesUI();
+    }
+
+    function deleteIssue(issueId) {
+        if (!confirm('この課題を削除しますか？')) return;
+        teamIssues = teamIssues.filter(i => String(i.id) !== String(issueId));
+        saveStorage();
+        renderIssuesUI();
+        showToast('課題を削除しました');
+    }
+
+    /* 過去データ全試合を通じた自動チーム弱点分析 */
+    function renderTeamAutoAnalysis() {
+        const box = document.getElementById('team-auto-issues-box');
+        if (!box) return;
+
+        let totalSpikeSucc = 0, totalSpikeAll = 0;
+        let totalServeEff = 0, totalServeAll = 0;
+        let totalRecSucc = 0, totalRecAll = 0;
+        let totalOtherErr = 0;
+
+        const allMatchRecords = [...savedMatches];
+        if (players.length > 0) {
+            allMatchRecords.push({ playersData: players });
+        }
+
+        allMatchRecords.forEach(m => {
+            if (!m.playersData) return;
+            m.playersData.forEach(p => {
+                const st = p.stats || initStatsObj();
+                totalSpikeSucc += st.spike.success || 0;
+                totalSpikeAll += (st.spike.success + st.spike.continue + st.spike.error) || 0;
+
+                totalServeEff += (st.serve.success || 0);
+                totalServeAll += (st.serve.success + st.serve.continue + st.serve.error) || 0;
+
+                totalRecSucc += st.reception.success || 0;
+                totalRecAll += (st.reception.success + st.reception.continue + st.reception.error) || 0;
+
+                totalOtherErr += st.otherError || 0;
+            });
+        });
+
+        const autoWeaknesses = [];
+
+        if (totalSpikeAll >= 10) {
+            const spikeRate = (totalSpikeSucc / totalSpikeAll) * 100;
+            if (spikeRate < 35) {
+                autoWeaknesses.push(`チーム全体の通算スパイク決定率が <b>${spikeRate.toFixed(1)}%</b> と低めです。ラリー中の二段トスの精度やリバウンド処理の練習が有効です。`);
+            }
+        }
+
+        if (totalServeAll >= 10) {
+            const serveRate = (totalServeEff / totalServeAll) * 100;
+            if (serveRate < 25) {
+                autoWeaknesses.push(`チーム全体の通算有効サーブ率が <b>${serveRate.toFixed(1)}%</b> です。相手の陣形を崩す攻めるサーブのコントロール向上が必要です。`);
+            }
+        }
+
+        if (totalRecAll >= 10) {
+            const recRate = (totalRecSucc / totalRecAll) * 100;
+            if (recRate < 60) {
+                autoWeaknesses.push(`チーム全体の通算レセプション返球率が <b>${recRate.toFixed(1)}%</b> です。ファーストタッチのセッターへの返し精度の向上が求められます。`);
+            }
+        }
+
+        if (totalOtherErr >= 10) {
+            autoWeaknesses.push(`通算の「その他ミス（反則・コンビミス等）」が <b>${totalOtherErr}本</b> 累積しています。お見合いや連携ミスを減らす声かけを強化しましょう。`);
+        }
+
+        let html = '<div class="ai-advisor-title">🤖 過去データ通算の自動課題分析</div>';
+        if (autoWeaknesses.length === 0) {
+            html += '<div style="font-size:0.85rem; color:#475569;">現在、データ上での極端なチーム全体の課題は検出されていません。順調なプレイが継続されています。</div>';
+        } else {
+            autoWeaknesses.forEach(w => {
+                html += `<div class="ai-item weakness"><b>【要改善】</b> ${w}</div>`;
+            });
+        }
+
+        box.innerHTML = html;
+    }
+
+    function updatePlayerPosSelects(prefix, currentValues = null) {
+        const ids = [`${prefix}position`, `${prefix}sub1`, `${prefix}sub2`];
+        const selected = currentValues || ids.map(id => document.getElementById(id)?.value || "");
+
+        ids.forEach((targetId, idx) => {
+            const selectEl = document.getElementById(targetId);
+            if (!selectEl) return;
+
+            const isSub = idx > 0;
+            const currentVal = selected[idx];
+
+            let html = isSub ? `<option value="なし">なし</option>` : "";
+
+            POSITIONS.forEach(pos => {
+                const isUsedElsewhere = selected.some((v, i) => i !== idx && v === pos);
+                if (!isUsedElsewhere) {
+                    const isSelected = currentVal === pos;
+                    html += `<option value="${pos}" ${isSelected ? 'selected' : ''}>${pos}</option>`;
+                }
+            });
+
+            selectEl.innerHTML = html;
+
+            if (prefix === 'p-' && isSub && (!currentVal || currentVal === '')) {
+                selectEl.value = 'なし';
+            }
+        });
+    }
+
+    function validatePlayerInput(num, name, height, currentId = null, pos = null) {
+        const numVal = Number(num);
+        if (!num || isNaN(numVal) || numVal < 1 || numVal > 99 || !Number.isInteger(numVal)) {
+            alert("背番号は 1 ～ 99 の範囲の数値で入力してください（必須）。");
+            return false;
+        }
+
+        if (players.some(p => String(p.number) === String(numVal) && String(p.id) !== String(currentId))) {
+            alert(`背番号 ${numVal} はすでに登録されています。`);
+            return false;
+        }
+
+        if (!name || name.trim().length === 0) {
+            alert("名前を入力してください（必須）。");
+            return false;
+        }
+        if (name.length > 20) {
+            alert("名前は20文字以内で入力してください。");
+            return false;
+        }
+        if (/\d/.test(name)) {
+            alert("名前に数字を含めることはできません。");
+            return false;
+        }
+
+        if (!height || height.toString().trim().length === 0) {
+            alert("身長を入力してください（必須）。");
+            return false;
+        } else {
+            const hVal = Number(height);
+            if (isNaN(hVal) || hVal < 120 || hVal > 220) {
+                alert("身長は 120 ～ 220 (cm) の範囲の数値で入力してください。");
+                return false;
+            }
+        }
+
+        if (pos !== null && (!pos || pos === "")) {
+            alert("メインポジションを選択してください（必須）。");
+            return false;
+        }
+
+        return true;
+    }
+
+    function readImageFile(fileInput) {
+        return new Promise((resolve) => {
+            const file = fileInput.files[0];
+            if (!file) {
+                resolve(null);
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function addPlayer() {
+        const num = document.getElementById('p-number').value;
+        const name = document.getElementById('p-name').value;
+        const height = document.getElementById('p-height').value;
+        const condition = document.getElementById('p-condition').value;
+        const pos = document.getElementById('p-position').value;
+        const sub1 = document.getElementById('p-sub1').value;
+        const sub2 = document.getElementById('p-sub2').value;
+        const memo = document.getElementById('p-memo').value;
+        const fileInput = document.getElementById('p-image');
+
+        if (!validatePlayerInput(num, name, height, null, pos)) return;
+
+        const photoDataDataUrl = await readImageFile(fileInput);
+
+        players.push({
+            id: Date.now(),
+            number: String(Number(num)),
+            name: name.trim(),
+            height: height || '-',
+            condition: condition || '普通',
+            position: pos,
+            subPositions: [sub1, sub2].filter(s => s && s !== 'なし'),
+            memo: memo ? memo.trim() : '',
+            photo: photoDataDataUrl,
+            stats: initStatsObj()
+        });
+
+        document.getElementById('p-number').value = '';
+        document.getElementById('p-name').value = '';
+        document.getElementById('p-height').value = '';
+        document.getElementById('p-memo').value = '';
+        fileInput.value = '';
+        
+        saveStorage();
+        render();
+        updatePlayerPosSelects('p-');
+
+        if (window.innerWidth < 900) {
+            switchTab('tab-list');
+        }
+    }
+
+    function openEditModal(id) {
+        const player = players.find(p => String(p.id) === String(id));
+        if (!player) return;
+
+        document.getElementById('edit-id').value = player.id;
+        document.getElementById('edit-number').value = player.number;
+        document.getElementById('edit-name').value = player.name;
+        document.getElementById('edit-height').value = player.height !== '-' ? player.height : '';
+        document.getElementById('edit-condition').value = player.condition || '普通';
+        document.getElementById('edit-memo').value = player.memo || '';
+        document.getElementById('edit-image').value = '';
+
+        const subs = player.subPositions || [];
+        const posValues = [
+            player.position,
+            subs[0] || 'なし',
+            subs[1] || 'なし'
+        ];
+
+        updatePlayerPosSelects('edit-', posValues);
+        document.getElementById('edit-modal').style.display = 'flex';
+    }
+
+    function resetPlayerPhoto() {
+        const id = document.getElementById('edit-id').value;
+        const player = players.find(p => String(p.id) === String(id));
+        if (player) {
+            player.photo = null;
+            document.getElementById('edit-image').value = '';
+            alert('画像を削除しました。「保存する」を押すと確定します。');
+        }
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('flick-toast');
+        toast.textContent = msg;
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 1500);
+    }
+
+    function calcRate(num, total) {
+        if (!total || total === 0) return '0.0%';
+        return ((num / total) * 100).toFixed(1) + '%';
+    }
+
+    function getCombinedPlayerStats(playerId) {
+        const combined = initStatsObj();
+
+        savedMatches.forEach(match => {
+            if (!match.playersData) return;
+            const pData = match.playersData.find(p => String(p.id) === String(playerId));
+            if (pData && pData.stats) {
+                const st = pData.stats;
+                ['spike', 'serve', 'block', 'reception'].forEach(action => {
+                    if (st[action]) {
+                        combined[action].success += st[action].success || 0;
+                        combined[action].continue += st[action].continue || 0;
+                        combined[action].error += st[action].error || 0;
+                    }
+                });
+                combined.otherError += st.otherError || 0;
+            }
+        });
+
+        const currentP = players.find(p => String(p.id) === String(playerId));
+        if (currentP && currentP.stats) {
+            const st = currentP.stats;
+            ['spike', 'serve', 'block', 'reception'].forEach(action => {
+                if (st[action]) {
+                    combined[action].success += st[action].success || 0;
+                    combined[action].continue += st[action].continue || 0;
+                    combined[action].error += st[action].error || 0;
+                }
+            });
+            combined.otherError += st.otherError || 0;
+        }
+
+        return combined;
+    }
+
+    function generateAIAdvice(st, isSetter) {
+        const strengths = [];
+        const weaknesses = [];
+
+        const spikeTotal = st.spike.success + st.spike.continue + st.spike.error;
+        if (spikeTotal >= 3) {
+            const spikeRate = (st.spike.success / spikeTotal) * 100;
+            const spikeErrRate = (st.spike.error / spikeTotal) * 100;
+
+            if (spikeRate >= 60) {
+                strengths.push("アタック決定率が高く、チームの決定力・主得点源として機能しています。");
+            } else if (spikeRate <= 30) {
+                weaknesses.push("アタック決定率の向上が課題です。ブロックを利用したリバウンドやコースの打ち分けを意識しましょう。");
+            }
+
+            if (spikeErrRate >= 25) {
+                weaknesses.push("スパイクミス率がやや高めです。無理に打ち切らず繋ぐ選択肢も持ちましょう。");
+            }
+        }
+
+        const recTotal = st.reception.success + st.reception.continue + st.reception.error;
+        if (recTotal >= 3) {
+            const recRate = (st.reception.success / recTotal) * 100;
+            const recErrRate = (st.reception.error / recTotal) * 100;
+
+            if (recRate >= 80) {
+                strengths.push("レセプション返球率（A.Bパス率）が非常に高く、安定した攻撃展開を支えています。");
+            } else if (recRate <= 60) {
+                weaknesses.push("レセプションの返球精度が課題です。正面での面作りとファーストタッチの落下地点への素早い入りを徹底しましょう。");
+            }
+
+            if (recErrRate >= 20) {
+                weaknesses.push("レセプション直接ミスを減らし、最低限セッターへ繋ぐ意識を高めましょう。");
+            }
+        }
+
+        const serveTotal = st.serve.success + st.serve.continue + st.serve.error;
+        if (serveTotal >= 3) {
+            const serveEffective = st.serve.success || 0;
+            const serveEffectiveRate = (serveEffective / serveTotal) * 100;
+
+            if (serveEffectiveRate > 60) {
+                strengths.push("効果的なサーブで相手の崩し・サービスエース率が高く、チームのブレイクに貢献しています。");
+            } else if (serveEffectiveRate < 20) {
+                weaknesses.push("有効サーブ率が低めです。相手を崩す狙いすましたコースへの打球を意識しましょう。");
+            }
+
+            const serveErrRate = (st.serve.error / serveTotal) * 100;
+            if (serveErrRate >= 25) {
+                weaknesses.push("サーブミス率が高めです。確実なインを狙うトスアップとフォームの安定を目指しましょう。");
+            }
+        }
+
+        if (st.block.success >= 3) {
+            strengths.push("相手アタッカーへの圧迫感があり、ブロック得点で直接相手の流れを断ち切れています。");
+        }
+
+        if (st.otherError >= 3) {
+            weaknesses.push("その他の失点・ミス（ドリブル・タッチネット・コンビミス等）が散見されます。プレイの正確性と連携を高めましょう。");
+        }
+
+        if (strengths.length === 0 && weaknesses.length === 0) {
+            strengths.push("現在データを蓄積中です。引き続き記録を続けて個人の傾向を分析しましょう。");
+        }
+
+        let html = '<div class="ai-advisor-box">';
+        html += '<div class="ai-advisor-title">🤖 AIアドバイザー分析結果</div>';
+        
+        if (strengths.length > 0) {
+            strengths.forEach(s => {
+                html += `<div class="ai-item strength"><b>【強み】</b> ${s}</div>`;
+            });
+        }
+        if (weaknesses.length > 0) {
+            weaknesses.forEach(w => {
+                html += `<div class="ai-item weakness"><b>【課題】</b> ${w}</div>`;
+            });
+        }
+        html += '</div>';
+
+        return html;
+    }
+
+    function openInfoModal(player, isCombined = false) {
+        document.getElementById('info-title').textContent = `${player.number} ${player.name}`;
+        
+        const subBadges = (player.subPositions && player.subPositions.length > 0)
+            ? player.subPositions.map(sp => `<span class="badge badge-sub">${sp}</span>`).join('')
+            : 'なし';
+
+        const heightStr = player.height !== '-' ? `${player.height} cm` : '未登録';
+        const memoStr = player.memo ? player.memo : '（なし）';
+        const condEmoji = CONDITION_EMOJI[player.condition] || '😐';
+        const photoHtml = player.photo ? `<img src="${player.photo}" class="info-avatar">` : '';
+
+        const st = isCombined ? getCombinedPlayerStats(player.id) : (player.stats || initStatsObj());
+
+        const spikeTotal = st.spike.success + st.spike.continue + st.spike.error;
+        const spikeRate = calcRate(st.spike.success, spikeTotal);
+
+        const serveTotal = st.serve.success + st.serve.continue + st.serve.error;
+        const serveEffective = st.serve.success || 0;
+        const serveEffectiveRate = calcRate(serveEffective, serveTotal);
+
+        const recTotal = st.reception.success + st.reception.continue + st.reception.error;
+        const recRate = calcRate(st.reception.success, recTotal);
+
+        const isFlickSetter = flickStarters.some((pId, idx) => String(pId) === String(player.id) && FLICK_STARTER_LABELS[idx] === 'セッター');
+        
+        let setterTossHtml = '';
+        if (isFlickSetter) {
+            const posSpikeCounts = {};
+            let teamSpikeTotal = 0;
+
+            flickStarters.forEach((pId, idx) => {
+                if (!pId) return;
+                const p = players.find(player => String(player.id) === String(pId));
+                if (!p) return;
+
+                const pst = isCombined ? getCombinedPlayerStats(p.id) : (p.stats || initStatsObj());
+                const pSpikeTotal = pst.spike.success + pst.spike.continue + pst.spike.error;
+
+                if (pSpikeTotal > 0) {
+                    const courtPosName = FLICK_STARTER_LABELS[idx] || p.position || 'その他';
+                    posSpikeCounts[courtPosName] = (posSpikeCounts[courtPosName] || 0) + pSpikeTotal;
+                    teamSpikeTotal += pSpikeTotal;
+                }
+            });
+
+            let tossBarsHtml = '';
+            if (teamSpikeTotal === 0) {
+                tossBarsHtml = '<div style="font-size:0.8rem; color:#64748b; text-align:center;">コート上の配置選手にまだスパイク記録がありません</div>';
+            } else {
+                Object.keys(posSpikeCounts).forEach(courtPosName => {
+                    const cnt = posSpikeCounts[courtPosName];
+                    const pct = ((cnt / teamSpikeTotal) * 100).toFixed(1);
+                    tossBarsHtml += `
+                        <div class="toss-bar-container">
+                            <div class="toss-bar-label"><span>${courtPosName}</span><span>${cnt}本 (${pct}%)</span></div>
+                            <div class="toss-progress-bg">
+                                <div class="toss-progress-fill" style="width: ${pct}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            const labelSuffix = isCombined ? '（全試合累計）' : '（現在の試合）';
+            setterTossHtml = `
+                <h3 style="font-size:0.95rem; margin-top:15px; margin-bottom:5px; text-align:center;">トス振り分け割合${labelSuffix}</h3>
+                <div style="background:#f8fafc; padding:8px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <div style="font-size:0.75rem; color:#64748b; margin-bottom:6px; text-align:center;">コート配置選手の総アタック打数: <b>${teamSpikeTotal}本</b></div>
+                    ${tossBarsHtml}
+                </div>
+            `;
+        }
+
+        const statsHeaderStr = isCombined ? '成績・決定率 (通算累計)' : '成績・決定率 (現在の試合)';
+        const aiAdviceHtml = isCombined ? '' : generateAIAdvice(st, isFlickSetter);
+
+        document.getElementById('info-body').innerHTML = `
+            ${photoHtml}
+            <div class="info-row"><span class="info-label">背番号</span><span>${player.number}</span></div>
+            <div class="info-row"><span class="info-label">名前</span><span>${player.name}</span></div>
+            <div class="info-row"><span class="info-label">身長</span><span>${heightStr}</span></div>
+            <div class="info-row"><span class="info-label">調子</span><span>${condEmoji} ${player.condition || '普通'}</span></div>
+            <div class="info-row"><span class="info-label">メインポジション</span><span class="badge">${player.position}</span></div>
+            <div class="info-row"><span class="info-label">サブポジション</span><span>${subBadges}</span></div>
+            <div class="info-row memo-row">
+                <span class="info-label">メモ</span>
+                <div class="info-memo-content">${memoStr}</div>
+            </div>
+
+            <h3 style="font-size:0.95rem; margin-top:15px; margin-bottom:5px; text-align:center;">${statsHeaderStr}</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>率/効果</th>
+                        <th>成功・効果/打数</th>
+                        <th>ミス</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><b>スパイク</b></td>
+                        <td><b>${spikeRate}</b></td>
+                        <td>${st.spike.success} / ${spikeTotal}</td>
+                        <td>${st.spike.error}</td>
+                    </tr>
+                    <tr>
+                        <td><b>サーブ</b></td>
+                        <td><b>${serveEffectiveRate}</b></td>
+                        <td>有効: ${serveEffective} / ${serveTotal} <span style="font-size:0.7rem;">(チャンス:${st.serve.continue})</span></td>
+                        <td>${st.serve.error}</td>
+                    </tr>
+                    <tr>
+                        <td><b>ブロック</b></td>
+                        <td><b>${st.block.success}本</b></td>
+                        <td>ワンタッチ: ${st.block.continue}</td>
+                        <td>${st.block.error}</td>
+                    </tr>
+                    <tr>
+                        <td><b>レセプション</b></td>
+                        <td><b>${recRate}</b></td>
+                        <td>A.Bパス: ${st.reception.success}/${recTotal}</td>
+                        <td>${st.reception.error}</td>
+                    </tr>
+                    <tr>
+                        <td><b>その他ミス</b></td>
+                        <td colspan="3"><b>${st.otherError || 0}本</b></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            ${setterTossHtml}
+            ${aiAdviceHtml}
+        `;
+
+        document.getElementById('info-modal').style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    async function updatePlayer() {
+        const id = document.getElementById('edit-id').value;
+        const player = players.find(p => String(p.id) === String(id));
+        
+        if (player) {
+            const num = document.getElementById('edit-number').value;
+            const name = document.getElementById('edit-name').value;
+            const height = document.getElementById('edit-height').value;
+            const condition = document.getElementById('edit-condition').value;
+            const memo = document.getElementById('edit-memo').value;
+            const fileInput = document.getElementById('edit-image');
+            const pos = document.getElementById('edit-position').value;
+
+            if (!validatePlayerInput(num, name, height, id, pos)) return;
+
+            const newPhoto = await readImageFile(fileInput);
+            if (newPhoto) {
+                player.photo = newPhoto;
+            }
+
+            player.number = String(Number(num));
+            player.name = name.trim();
+            player.height = height || '-';
+            player.condition = condition;
+            player.position = pos;
+            
+            const sub1 = document.getElementById('edit-sub1').value;
+            const sub2 = document.getElementById('edit-sub2').value;
+            player.subPositions = [sub1, sub2].filter(s => s && s !== 'なし');
+            player.memo = memo ? memo.trim() : '';
+
+            saveStorage();
+            render();
+            closeModal('edit-modal');
+        }
+    }
+
+    function deletePlayer(id) {
+        if (!confirm('削除しますか？')) return;
+        players = players.filter(p => String(p.id) !== String(id));
+        starters = starters.map(s => String(s) === String(id) ? "" : s);
+        flickStarters = flickStarters.map(s => String(s) === String(id) ? "" : s);
+        saveStorage();
+        render();
+    }
+
+    function onStarterChange(index, val) {
+        starters[index] = String(val || "");
+        saveStorage();
+        renderStartersUI();
+        renderCourt();
+    }
+
+    function onFlickStarterChange(index, val) {
+        flickStarters[index] = String(val || "");
+        saveStorage();
+        renderFlickStartersUI();
+        renderFlickCourt();
+    }
+
+    function renderStartersUI() {
+        const startersEl = document.getElementById('starter-selects');
+        startersEl.innerHTML = '';
+
+        for (let i = 0; i < 9; i++) {
+            const select = document.createElement('select');
+            select.style.fontSize = '0.75rem';
+            select.onchange = (e) => onStarterChange(i, e.target.value);
+            
+            const label = STARTER_LABELS[i] || `Pos ${i + 1}`;
+            let html = `<option value="">${label}</option>`;
+            
+            players.forEach(p => {
+                const isSelectedElsewhere = starters.some((sId, idx) => String(sId) === String(p.id) && idx !== i);
+                if (!isSelectedElsewhere) {
+                    const isCurrent = String(starters[i]) === String(p.id);
+                    html += `<option value="${p.id}" ${isCurrent ? 'selected' : ''}>${p.number} ${p.name}</option>`;
+                }
+            });
+
+            select.innerHTML = html;
+            startersEl.appendChild(select);
+        }
+    }
+
+    function renderFlickStartersUI() {
+        const frontEl = document.getElementById('flick-starter-front-selects');
+        const backEl = document.getElementById('flick-starter-back-selects');
+        if (!frontEl || !backEl) return;
+
+        frontEl.innerHTML = '';
+        backEl.innerHTML = '';
+
+        for (let i = 0; i < 9; i++) {
+            const select = document.createElement('select');
+            select.style.fontSize = '0.65rem';
+            select.onchange = (e) => onFlickStarterChange(i, e.target.value);
+            
+            const label = FLICK_STARTER_LABELS[i] || `Pos ${i + 1}`;
+            let html = `<option value="">${label}</option>`;
+            
+            players.forEach(p => {
+                const isSelectedElsewhere = flickStarters.some((sId, idx) => String(sId) === String(p.id) && idx !== i);
+                if (!isSelectedElsewhere) {
+                    const isCurrent = String(flickStarters[i]) === String(p.id);
+                    html += `<option value="${p.id}" ${isCurrent ? 'selected' : ''}>${p.number} ${p.name}</option>`;
+                }
+            });
+
+            select.innerHTML = html;
+
+            if (i < 6) {
+                frontEl.appendChild(select);
+            } else {
+                backEl.appendChild(select);
+            }
+        }
+    }
+
+    function renderCourt() {
+        const canvas = document.getElementById('court-canvas');
+        canvas.querySelectorAll('.player-pin').forEach(el => el.remove());
+
+        const ballPin = document.getElementById('ball-pin');
+        ballPin.style.left = `${ballPosition.x}%`;
+        ballPin.style.top = `${ballPosition.y}%`;
+        makeBallDraggable(ballPin);
+
+        starters.forEach((pId, idx) => {
+            if (!pId) return;
+            const p = players.find(player => String(player.id) === String(pId));
+            if (!p) return;
+
+            const pos = pinPositions[idx] || DEFAULT_POSITIONS[idx];
+            const pin = document.createElement('div');
+            pin.className = 'player-pin';
+            pin.style.left = `${pos.x}%`;
+            pin.style.top = `${pos.y}%`;
+            
+            const condEmoji = CONDITION_EMOJI[p.condition] || '😐';
+            const innerContent = p.photo 
+                ? `<img src="${p.photo}" class="pin-photo" draggable="false">` 
+                : `<span class="pin-num">${p.number}</span><span class="pin-name">${p.name}</span>`;
+
+            pin.innerHTML = `
+                <span class="pin-condition">${condEmoji}</span>
+                ${innerContent}
+            `;
+
+            makeDraggableAndClickable(pin, idx, p);
+            canvas.appendChild(pin);
+        });
+    }
+
+    function renderFlickCourt() {
+        const frontContainer = document.getElementById('flick-front-cards');
+        const backContainer = document.getElementById('flick-back-cards');
+        if (!frontContainer || !backContainer) return;
+
+        frontContainer.innerHTML = '';
+        backContainer.innerHTML = '';
+
+        flickStarters.forEach((pId, idx) => {
+            const posLabel = FLICK_STARTER_LABELS[idx];
+            const card = document.createElement('div');
+
+            if (!pId) {
+                card.className = 'big-player-card empty-card';
+                card.innerHTML = `<span style="font-size:0.65rem;">${posLabel}</span><span>未選出</span>`;
+            } else {
+                const p = players.find(player => String(player.id) === String(pId));
+                if (!p) return;
+
+                card.className = 'big-player-card';
+                const condEmoji = CONDITION_EMOJI[p.condition] || '😐';
+
+                const avatarHtml = p.photo 
+                    ? `<img src="${p.photo}" class="card-avatar" draggable="false">` 
+                    : `<div class="card-num">#${p.number}</div>`;
+
+                card.innerHTML = `
+                    <span class="card-cond">${condEmoji}</span>
+                    <span class="card-pos">${posLabel}</span>
+                    ${avatarHtml}
+                    <span class="card-name">${p.name}</span>
+                `;
+
+                attachCardFlickEvents(card, p);
+            }
+
+            if (idx < 6) {
+                frontContainer.appendChild(card);
+            } else {
+                backContainer.appendChild(card);
+            }
+        });
+    }
+
+    function getClientCoords(e) {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    }
+
+    function attachCardFlickEvents(cardElement, player) {
+        let startX = 0, startY = 0;
+        let isDragging = false;
+        let currentMode = null;
+        let activeChoice = null;
+        let activePointerId = null;
+
+        const popContainer = document.getElementById('flick-grid-court');
+        const popMenu = document.getElementById('flick-pop');
+        const modeTitle = document.getElementById('flick-mode-title');
+        const optLeft = document.getElementById('opt-left');
+        const optTop = document.getElementById('opt-top');
+        const optRight = document.getElementById('opt-right');
+        const optBottom = document.getElementById('opt-bottom');
+
+        function startHandler(e) {
+            isDragging = true;
+            currentMode = null;
+            activeChoice = null;
+
+            if (e.pointerId !== undefined) {
+                activePointerId = e.pointerId;
+                try { cardElement.setPointerCapture(e.pointerId); } catch(err) {}
+            }
+
+            const coords = getClientCoords(e);
+            startX = coords.x;
+            startY = coords.y;
+
+            cardElement.classList.add('active-flick');
+
+            const cardRect = cardElement.getBoundingClientRect();
+            const containerRect = popContainer.getBoundingClientRect();
+            const centerX = (cardRect.left + cardRect.width / 2) - containerRect.left;
+            const centerY = (cardRect.top + cardRect.height / 2) - containerRect.top;
+
+            popMenu.style.left = `${centerX}px`;
+            popMenu.style.top = `${centerY}px`;
+            popMenu.style.display = 'none';
+
+            window.addEventListener('pointermove', moveHandler, { passive: false });
+            window.addEventListener('pointerup', endHandler);
+            window.addEventListener('pointercancel', endHandler);
+            window.addEventListener('mousemove', moveHandler);
+            window.addEventListener('mouseup', endHandler);
+            window.addEventListener('touchmove', moveHandler, { passive: false });
+            window.addEventListener('touchend', endHandler);
+        }
+
+        function moveHandler(e) {
+            if (!isDragging) return;
+            if (e.cancelable) e.preventDefault();
+
+            const coords = getClientCoords(e);
+            const diffX = coords.x - startX;
+            const diffY = coords.y - startY;
+
+            if (!currentMode) {
+                if (diffY < -15 && Math.abs(diffY) > Math.abs(diffX)) {
+                    currentMode = 'spike';
+                    popMenu.className = 'flick-pop-menu spike-mode';
+                    modeTitle.textContent = 'スパイク';
+                    optLeft.textContent = '継続';
+                    optTop.textContent = '得点';
+                    optRight.textContent = 'ミス';
+                    optBottom.textContent = 'その他ミス';
+                    optBottom.style.display = 'block';
+                    popMenu.style.display = 'block';
+                } else if (diffX < -15 && Math.abs(diffX) > Math.abs(diffY)) {
+                    currentMode = 'block';
+                    popMenu.className = 'flick-pop-menu block-mode';
+                    modeTitle.textContent = 'ブロック';
+                    optTop.textContent = '得点';
+                    optLeft.textContent = 'ワンタッチ';
+                    optBottom.textContent = 'ミス';
+                    optRight.textContent = 'その他ミス';
+                    optBottom.style.display = 'block';
+                    popMenu.style.display = 'block';
+                } else if (diffX > 15 && Math.abs(diffX) > Math.abs(diffY)) {
+                    currentMode = 'reception';
+                    popMenu.className = 'flick-pop-menu reception-mode';
+                    modeTitle.textContent = 'レセプション';
+                    optTop.textContent = 'A.Bパス';
+                    optRight.textContent = 'Cパス';
+                    optBottom.textContent = 'ミス';
+                    optLeft.textContent = 'その他ミス';
+                    optBottom.style.display = 'block';
+                    popMenu.style.display = 'block';
+                } else if (diffY > 15 && Math.abs(diffY) > Math.abs(diffX)) {
+                    currentMode = 'serve';
+                    popMenu.className = 'flick-pop-menu serve-mode';
+                    modeTitle.textContent = 'サーブ';
+                    optBottom.textContent = 'エースor崩す';
+                    optLeft.textContent = 'チャンスサーブ';
+                    optRight.textContent = 'ミス';
+                    optTop.textContent = 'その他ミス';
+                    optBottom.style.display = 'block';
+                    popMenu.style.display = 'block';
+                }
+            }
+
+            if (currentMode) {
+                optLeft.classList.remove('active');
+                optTop.classList.remove('active');
+                optRight.classList.remove('active');
+                optBottom.classList.remove('active');
+                activeChoice = null;
+
+                if (currentMode === 'spike') {
+                    if (diffX < -25) { activeChoice = 'continue'; optLeft.classList.add('active'); }
+                    else if (diffX > 25) { activeChoice = 'error'; optRight.classList.add('active'); }
+                    else if (diffY < -35) { activeChoice = 'success'; optTop.classList.add('active'); }
+                    else if (diffY > 25) { activeChoice = 'otherError'; optBottom.classList.add('active'); }
+                } else if (currentMode === 'block') {
+                    if (diffY > 15) { activeChoice = 'error'; optBottom.classList.add('active'); }
+                    else if (diffY < -25) { activeChoice = 'success'; optTop.classList.add('active'); }
+                    else if (diffX < -25) { activeChoice = 'continue'; optLeft.classList.add('active'); }
+                    else if (diffX > 25) { activeChoice = 'otherError'; optRight.classList.add('active'); }
+                } else if (currentMode === 'reception') {
+                    if (diffY > 15) { activeChoice = 'error'; optBottom.classList.add('active'); }
+                    else if (diffY < -25) { activeChoice = 'success'; optTop.classList.add('active'); }
+                    else if (diffX > 25) { activeChoice = 'continue'; optRight.classList.add('active'); }
+                    else if (diffX < -25) { activeChoice = 'otherError'; optLeft.classList.add('active'); }
+                } else if (currentMode === 'serve') {
+                    if (diffY > 30) { activeChoice = 'success'; optBottom.classList.add('active'); }
+                    else if (diffX < -25) { activeChoice = 'continue'; optLeft.classList.add('active'); }
+                    else if (diffX > 25) { activeChoice = 'error'; optRight.classList.add('active'); }
+                    else if (diffY < -25) { activeChoice = 'otherError'; optTop.classList.add('active'); }
+                }
+            }
+        }
+
+        function endHandler(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            popMenu.style.display = 'none';
+            cardElement.classList.remove('active-flick');
+
+            if (activePointerId !== null) {
+                try { cardElement.releasePointerCapture(activePointerId); } catch(err) {}
+                activePointerId = null;
+            }
+
+            window.removeEventListener('pointermove', moveHandler);
+            window.removeEventListener('pointerup', endHandler);
+            window.removeEventListener('pointercancel', endHandler);
+            window.removeEventListener('mousemove', moveHandler);
+            window.removeEventListener('mouseup', endHandler);
+            window.removeEventListener('touchmove', moveHandler);
+            window.removeEventListener('touchend', endHandler);
+
+            if (!player.stats) player.stats = initStatsObj();
+
+            if (currentMode && activeChoice) {
+                if (activeChoice === 'otherError') {
+                    player.stats.otherError = (player.stats.otherError || 0) + 1;
+                    showToast(`${player.number}番 ${player.name}: その他ミス`);
+                } else if (currentMode === 'spike') {
+                    if (activeChoice === 'success') { player.stats.spike.success++; showToast(`${player.number}番 ${player.name}: スパイク得点！`); }
+                    else if (activeChoice === 'continue') { player.stats.spike.continue++; showToast(`${player.number}番 ${player.name}: スパイク継続`); }
+                    else if (activeChoice === 'error') { player.stats.spike.error++; showToast(`${player.number}番 ${player.name}: スパイクミス`); }
+                } else if (currentMode === 'block') {
+                    if (activeChoice === 'success') { player.stats.block.success++; showToast(`${player.number}番 ${player.name}: ブロック得点！`); }
+                    else if (activeChoice === 'continue') { player.stats.block.continue++; showToast(`${player.number}番 ${player.name}: ブロックワンタッチ`); }
+                    else if (activeChoice === 'error') { player.stats.block.error++; showToast(`${player.number}番 ${player.name}: ブロックミス`); }
+                } else if (currentMode === 'reception') {
+                    if (activeChoice === 'success') { player.stats.reception.success++; showToast(`${player.number}番 ${player.name}: レセプション A.Bパス！`); }
+                    else if (activeChoice === 'continue') { player.stats.reception.continue++; showToast(`${player.number}番 ${player.name}: レセプション Cパス`); }
+                    else if (activeChoice === 'error') { player.stats.reception.error++; showToast(`${player.number}番 ${player.name}: レセプションミス`); }
+                } else if (currentMode === 'serve') {
+                    if (activeChoice === 'success') { player.stats.serve.success++; showToast(`${player.number}番 ${player.name}: エース/崩したサーブ`); }
+                    else if (activeChoice === 'continue') { player.stats.serve.continue++; showToast(`${player.number}番 ${player.name}: チャンスサーブ`); }
+                    else if (activeChoice === 'error') { player.stats.serve.error++; showToast(`${player.number}番 ${player.name}: サーブミス`); }
+                }
+                renderTeamSummary(players, 'current-team-summary', '📊 チーム全体スタッツ（現在の試合）');
+            } else if (!currentMode) {
+                openInfoModal(player, false);
+            }
+            saveStorage();
+        }
+
+        cardElement.addEventListener('pointerdown', startHandler, { passive: false });
+        cardElement.addEventListener('touchstart', startHandler, { passive: false });
+    }
+
+    function makeBallDraggable(element) {
+        let isDragging = false;
+        let activePointerId = null;
+        const canvas = document.getElementById('court-canvas');
+
+        function startDrag(e) {
+            isDragging = true;
+            if (e.pointerId !== undefined) {
+                activePointerId = e.pointerId;
+                try { element.setPointerCapture(e.pointerId); } catch(err) {}
+            }
+            if (e.cancelable) e.preventDefault();
+        }
+
+        function moveDrag(e) {
+            if (!isDragging) return;
+            if (e.cancelable) e.preventDefault();
+
+            const rect = canvas.getBoundingClientRect();
+            const coords = getClientCoords(e);
+
+            let x = ((coords.x - rect.left) / rect.width) * 100;
+            let y = ((coords.y - rect.top) / rect.height) * 100;
+
+            x = Math.max(3, Math.min(97, x));
+            y = Math.max(3, Math.min(97, y));
+
+            element.style.left = `${x}%`;
+            element.style.top = `${y}%`;
+
+            ballPosition = { x: Math.round(x), y: Math.round(y) };
+        }
+
+        function stopDrag() {
+            if (isDragging) {
+                isDragging = false;
+                if (activePointerId !== null) {
+                    try { element.releasePointerCapture(activePointerId); } catch(err) {}
+                    activePointerId = null;
+                }
+                saveStorage();
+            }
+        }
+
+        element.addEventListener('pointerdown', startDrag, { passive: false });
+        element.addEventListener('touchstart', startDrag, { passive: false });
+
+        window.addEventListener('pointermove', moveDrag, { passive: false });
+        window.addEventListener('mousemove', moveDrag);
+        window.addEventListener('touchmove', moveDrag, { passive: false });
+
+        window.addEventListener('pointerup', stopDrag);
+        window.addEventListener('pointercancel', stopDrag);
+        window.addEventListener('mouseup', stopDrag);
+        window.addEventListener('touchend', stopDrag);
+    }
+
+    function makeDraggableAndClickable(element, index, player) {
+        let isDragging = false;
+        let hasMoved = false;
+        let activePointerId = null;
+        const canvas = document.getElementById('court-canvas');
+
+        function startDrag(e) {
+            isDragging = true;
+            hasMoved = false;
+            if (e.pointerId !== undefined) {
+                activePointerId = e.pointerId;
+                try { element.setPointerCapture(e.pointerId); } catch(err) {}
+            }
+        }
+
+        function moveDrag(e) {
+            if (!isDragging) return;
+            if (e.cancelable) e.preventDefault();
+            hasMoved = true;
+
+            const rect = canvas.getBoundingClientRect();
+            const coords = getClientCoords(e);
+
+            let x = ((coords.x - rect.left) / rect.width) * 100;
+            let y = ((coords.y - rect.top) / rect.height) * 100;
+
+            x = Math.max(5, Math.min(95, x));
+            y = Math.max(5, Math.min(95, y));
+
+            element.style.left = `${x}%`;
+            element.style.top = `${y}%`;
+
+            pinPositions[index] = { x: Math.round(x), y: Math.round(y) };
+        }
+
+        function stopDrag() {
+            if (isDragging) {
+                isDragging = false;
+                if (activePointerId !== null) {
+                    try { element.releasePointerCapture(activePointerId); } catch(err) {}
+                    activePointerId = null;
+                }
+                saveStorage();
+                
+                if (!hasMoved) {
+                    openInfoModal(player, false);
+                }
+            }
+        }
+
+        element.addEventListener('pointerdown', startDrag, { passive: false });
+        element.addEventListener('touchstart', startDrag, { passive: false });
+
+        window.addEventListener('pointermove', moveDrag, { passive: false });
+        window.addEventListener('mousemove', moveDrag);
+        window.addEventListener('touchmove', moveDrag, { passive: false });
+
+        window.addEventListener('pointerup', stopDrag);
+        window.addEventListener('pointercancel', stopDrag);
+        window.addEventListener('mouseup', stopDrag);
+        window.addEventListener('touchend', stopDrag);
+    }
+
+    function render() {
+        const listEl = document.getElementById('player-list');
+        listEl.innerHTML = '';
+        
+        players.sort((a, b) => Number(a.number) - Number(b.number)).forEach(p => {
+            if (!p.stats) p.stats = initStatsObj();
+
+            const tr = document.createElement('tr');
+            
+            const subBadges = (p.subPositions && p.subPositions.length > 0)
+                ? p.subPositions.map(sp => `<span class="badge badge-sub">${sp}</span>`).join('')
+                : '';
+
+            const heightStr = p.height !== '-' ? `${p.height}cm` : '-';
+            const condEmoji = CONDITION_EMOJI[p.condition] || '😐';
+            const photoImg = p.photo 
+                ? `<img src="${p.photo}" class="list-photo" draggable="false" onclick="openInfoModal(players.find(pl => String(pl.id) === String('${p.id}')), true)">` 
+                : '';
+
+            tr.innerHTML = `
+                <td><b>${p.number}</b></td>
+                <td>
+                    ${photoImg}
+                    <span class="clickable-player-name" onclick="openInfoModal(players.find(pl => String(pl.id) === String('${p.id}')), true)">${p.name}</span>
+                </td>
+                <td>${heightStr}</td>
+                <td><span title="${p.condition || '普通'}">${condEmoji}</span></td>
+                <td>
+                    <span class="badge">${p.position}</span><br>
+                    ${subBadges}
+                </td>
+                <td>
+                    <div class="btn-group">
+                        <button class="btn-edit" onclick="openEditModal('${p.id}')">編集</button>
+                        <button class="btn-del" onclick="deletePlayer('${p.id}')">削除</button>
+                    </div>
+                </td>
+            `;
+            listEl.appendChild(tr);
+        });
+
+        renderStartersUI();
+        renderFlickStartersUI();
+        renderCourt();
+        renderSavedMatchesSelect();
+        renderTeamSummary(players, 'current-team-summary', '📊 チーム全体スタッツ（現在の試合）');
+    }
+
+    updatePlayerPosSelects('p-');
+    render();
+</script>
+
+</body>
+</html>
