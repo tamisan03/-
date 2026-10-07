@@ -4,6 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>9人制バレーボール チーム管理 (iPad完全対応版)</title>
+
+    <!-- Firebase SDK (v10.8.0) の初期化設定 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+
+        // 提供されたFirebase設定情報
+        const firebaseConfig = {
+            apiKey: "AIzaSyDIq6jvzkx2OyvPURkzCnWYP1apqckLI00",
+            authDomain: "team-seinan.firebaseapp.com",
+            projectId: "team-seinan",
+            storageBucket: "team-seinan.firebasestorage.app",
+            messagingSenderId: "891837739455",
+            appId: "1:891837739455:web:ab01474df7bc6e329d710a",
+            measurementId: "G-5SQ92WZ97C"
+        };
+
+        // Firebaseの初期化
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+
+        // 将来的なデータベース連携(Firestore等)のためにwindowオブジェクトへ保持
+        window.firebaseApp = app;
+        window.firebaseAnalytics = analytics;
+        console.log("Firebase initialized successfully.");
+    </script>
+
     <style>
         :root {
             --primary: #2563eb;
