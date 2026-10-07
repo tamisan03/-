@@ -546,6 +546,13 @@
         .status-open { background: #fee2e2; color: #991b1b; }
         .status-wip { background: #fef3c7; color: #92400e; }
         .status-done { background: #dcfce7; color: #166534; }
+
+        /* 課題入力欄（textarea）の拡大指定 */
+        #issue-desc-input, #edit-issue-desc {
+            min-height: 120px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
@@ -788,20 +795,20 @@
                     <div class="form-group">
                         <label>カテゴリ</label>
                         <select id="issue-category-select">
-                            <option value="スパイク">💥 スパイク</option>
-                            <option value="サーブ">🚀 サーブ</option>
-                            <option value="レセプション">🛡 レセプション</option>
-                            <option value="ブロック">🖐 ブロック</option>
-                            <option value="連携・コンビ">🔄 連携・コンビ</option>
-                            <option value="その他">📌 その他</option>
+                            <option value="スパイク">スパイク</option>
+                            <option value="サーブ">サーブ</option>
+                            <option value="レセプション">レセプション</option>
+                            <option value="ブロック">ブロック</option>
+                            <option value="連携・コンビ">連携・コンビ</option>
+                            <option value="その他">その他</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>優先度</label>
                         <select id="issue-priority-select">
-                            <option value="high">🔴 高（早急に改善）</option>
-                            <option value="mid" selected>🟡 中（通常の練習）</option>
-                            <option value="low">🟢 低（継続アプローチ）</option>
+                            <option value="high">高（早急に改善）</option>
+                            <option value="mid" selected>中（通常の練習）</option>
+                            <option value="low">低（継続アプローチ）</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -896,20 +903,20 @@
         <div class="form-group">
             <label>カテゴリ</label>
             <select id="edit-issue-category">
-                <option value="スパイク">💥 スパイク</option>
-                <option value="サーブ">🚀 サーブ</option>
-                <option value="レセプション">🛡 レセプション</option>
-                <option value="ブロック">🖐 ブロック</option>
-                <option value="連携・コンビ">🔄 連携・コンビ</option>
-                <option value="その他">📌 その他</option>
+                <option value="スパイク">スパイク</option>
+                <option value="サーブ">サーブ</option>
+                <option value="レセプション">レセプション</option>
+                <option value="ブロック">ブロック</option>
+                <option value="連携・コンビ">連携・コンビ</option>
+                <option value="その他">その他</option>
             </select>
         </div>
         <div class="form-group">
             <label>優先度</label>
             <select id="edit-issue-priority">
-                <option value="high">🔴 高（早急に改善）</option>
-                <option value="mid">🟡 中（通常の練習）</option>
-                <option value="low">🟢 低（継続アプローチ）</option>
+                <option value="high">高（早急に改善）</option>
+                <option value="mid">中（通常の練習）</option>
+                <option value="low">低（継続アプローチ）</option>
             </select>
         </div>
         <div class="form-group">
@@ -1222,22 +1229,22 @@
         }
 
         container.innerHTML = `
-            <div class="top3-section-title">🏆 この試合の部門別トップ3</div>
+            <div class="top3-section-title">この試合の部門別トップ3</div>
             <div class="top3-grid">
                 <div class="top3-card">
-                    <div class="top3-card-header">💥 スパイク決定率</div>
+                    <div class="top3-card-header">スパイク決定率</div>
                     <ul class="top3-list">${buildTop3ListHtml(spikeList, 'rate')}</ul>
                 </div>
                 <div class="top3-card">
-                    <div class="top3-card-header">🚀 有効サーブ率</div>
+                    <div class="top3-card-header">有効サーブ率</div>
                     <ul class="top3-list">${buildTop3ListHtml(serveList, 'serveRate')}</ul>
                 </div>
                 <div class="top3-card">
-                    <div class="top3-card-header">🖐 ブロック得点数</div>
+                    <div class="top3-card-header">ブロック得点数</div>
                     <ul class="top3-list">${buildTop3ListHtml(blockList, 'count')}</ul>
                 </div>
                 <div class="top3-card">
-                    <div class="top3-card-header">🛡 レセプションA.Bパス率</div>
+                    <div class="top3-card-header">レセプションA.Bパス率</div>
                     <ul class="top3-list">${buildTop3ListHtml(recList, 'rate')}</ul>
                 </div>
             </div>
@@ -1419,13 +1426,13 @@
                 card.className = `issue-card priority-${issue.priority}`;
                 
                 let statusClass = 'status-open';
-                let statusLabel = '🔴 未着手';
+                let statusLabel = '未着手';
                 if (issue.status === 'wip') {
                     statusClass = 'status-wip';
-                    statusLabel = '🟡 対応中';
+                    statusLabel = '対応中';
                 } else if (issue.status === 'done') {
                     statusClass = 'status-done';
-                    statusLabel = '🟢 完了';
+                    statusLabel = '完了';
                 }
 
                 card.innerHTML = `
@@ -1593,7 +1600,7 @@
             autoWeaknesses.push(`通算の「その他ミス（反則・コンビミス等）」が <b>${totalOtherErr}本</b> 累積しています。お見合いや連携ミスを減らす声かけを強化しましょう。`);
         }
 
-        let html = '<div class="ai-advisor-title">🤖 過去データ通算の自動課題分析</div>';
+        let html = '<div class="ai-advisor-title">過去データ通算の自動課題分析</div>';
         if (autoWeaknesses.length === 0) {
             html += '<div style="font-size:0.85rem; color:#475569;">現在、データ上での極端なチーム全体の課題は検出されていません。順調なプレイが継続されています。</div>';
         } else {
@@ -1880,7 +1887,7 @@
         }
 
         let html = '<div class="ai-advisor-box">';
-        html += '<div class="ai-advisor-title">🤖 AIアドバイザー分析結果</div>';
+        html += '<div class="ai-advisor-title">AIアドバイザー分析結果</div>';
         
         if (strengths.length > 0) {
             strengths.forEach(s => {
@@ -1906,7 +1913,7 @@
 
         const heightStr = player.height !== '-' ? `${player.height} cm` : '未登録';
         const memoStr = player.memo ? player.memo : '（なし）';
-        const condEmoji = CONDITION_EMOJI[player.condition] || '😐';
+        const condEmoji = CONDITION_EMOJI[player.condition] || '普通';
         const photoHtml = player.photo ? `<img src="${player.photo}" class="info-avatar">` : '';
 
         const st = isCombined ? getCombinedPlayerStats(player.id) : (player.stats || initStatsObj());
@@ -2179,7 +2186,7 @@
             pin.style.left = `${pos.x}%`;
             pin.style.top = `${pos.y}%`;
             
-            const condEmoji = CONDITION_EMOJI[p.condition] || '😐';
+            const condEmoji = CONDITION_EMOJI[p.condition] || '普通';
             const innerContent = p.photo 
                 ? `<img src="${p.photo}" class="pin-photo" draggable="false">` 
                 : `<span class="pin-num">${p.number}</span><span class="pin-name">${p.name}</span>`;
@@ -2214,7 +2221,7 @@
                 if (!p) return;
 
                 card.className = 'big-player-card';
-                const condEmoji = CONDITION_EMOJI[p.condition] || '😐';
+                const condEmoji = CONDITION_EMOJI[p.condition] || '普通';
 
                 const avatarHtml = p.photo 
                     ? `<img src="${p.photo}" class="card-avatar" draggable="false">` 
@@ -2567,7 +2574,7 @@
                 : '';
 
             const heightStr = p.height !== '-' ? `${p.height}cm` : '-';
-            const condEmoji = CONDITION_EMOJI[p.condition] || '😐';
+            const condEmoji = CONDITION_EMOJI[p.condition] || '普通';
             const photoImg = p.photo 
                 ? `<img src="${p.photo}" class="list-photo" draggable="false" onclick="openInfoModal(players.find(pl => String(pl.id) === String('${p.id}')), true)">` 
                 : '';
