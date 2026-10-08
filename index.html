@@ -10,10 +10,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        // Firebase 匿名認証用モジュールのインポート追加
         import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // 提供されたFirebase設定情報
         const firebaseConfig = {
             apiKey: "AIzaSyDIq6jvzkx2OyvPURkzCnWYP1apqckLI00",
             authDomain: "team-seinan.firebaseapp.com",
@@ -24,13 +22,11 @@
             measurementId: "G-5SQ92WZ97C"
         };
 
-        // Firebase & Firestore & Auth の初期化
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // グローバルオブジェクトへ保持
         window.firebaseApp = app;
         window.firebaseAnalytics = analytics;
         window.db = db;
@@ -359,7 +355,7 @@
         /* セッター専用トス用（右のみ表示） */
         .flick-pop-menu.toss-mode .flick-opt.right { top: -20px; left: 50px; background: #dc2626; }
 
-        /* サーブ用（CSS配置の修正） */
+        /* サーブ用 */
         .flick-pop-menu.serve-mode .flick-opt.bottom { top: 25px; left: -45px; background: #16a34a; }
         .flick-pop-menu.serve-mode .flick-opt.left { top: -20px; left: -120px; background: #ca8a04; }
         .flick-pop-menu.serve-mode .flick-opt.right { top: -20px; left: 50px; background: #dc2626; }
@@ -375,7 +371,8 @@
         .btn-reset-stats { background: #ef4444; color: white; border: none; padding: 10px 14px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; cursor: pointer; white-space: nowrap; }
         .btn-save-match { background: #16a34a; color: white; border: none; padding: 10px 14px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; cursor: pointer; white-space: nowrap; }
 
-        .selected-match-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
+        /* 青い下線を削除したヘッダー表示 */
+        .selected-match-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; }
         .setter-toss-badge { display: inline-block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e4ed8; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; margin-bottom: 4px; font-weight: bold; }
 
         td.cell-warn, span.setter-toss-badge.cell-warn { background-color: #fee2e2 !important; color: #991b1b !important; border-color: #fca5a5 !important; }
@@ -520,6 +517,80 @@
             color: #1e293b;
         }
 
+        /* 階層ナビ用スタイル */
+        .history-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+            max-height: 280px;
+            overflow-y: auto;
+            padding: 6px;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .history-item-card {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            text-align: center;
+            position: relative;
+        }
+
+        .history-item-card:hover { border-color: #93c5fd; background: #f0f9ff; }
+        .history-item-card.selected { border-color: var(--primary); background: #eff6ff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+        .history-item-card.back-btn-card { border-style: dashed; border-color: #94a3b8; background: #f8fafc; }
+        .history-item-card.total-summary-card { border-color: #f59e0b; background: #fffbebf0; }
+        .history-item-card.total-summary-card.selected { border-color: #d97706; background: #fef3c7; box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.3); }
+
+        .history-set-badge {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            background: #2563eb;
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: bold;
+            padding: 1px 6px;
+            border-radius: 10px;
+        }
+
+        .history-icon-circle {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #dbeafe;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 6px;
+        }
+
+        .history-card-name {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #0f172a;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .history-card-date {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: 3px;
+        }
+
         /* 過去データ成績編集用スタイル */
         .grid-3col {
             display: grid;
@@ -609,7 +680,6 @@
         .status-wip { background: #fef3c7; color: #92400e; }
         .status-done { background: #dcfce7; color: #166534; }
 
-        /* 課題入力欄（textarea）の拡大指定 */
         #issue-desc-input, #edit-issue-desc {
             min-height: 120px;
             font-size: 0.95rem;
@@ -759,9 +829,12 @@
             <h2>記録</h2>
 
             <div class="match-data-panel">
-                <label style="color:#1e293b; font-size:0.9rem;">現在の記録データを保存・リセット</label>
-                <div class="panel-row">
-                    <input type="text" id="match-name-input" placeholder="試合名（例: 秋季大会 1回戦）" style="font-size:0.85rem;">
+                <label style="color:#1e293b; font-size:0.9rem; font-weight:bold;">現在の記録データを保存・リセット</label>
+                <div class="panel-row" style="flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                    <input type="date" id="match-date-input" style="width:160px; font-size:0.85rem;">
+                    <input type="text" id="match-tournament-input" placeholder="大会名（例: 春季大会）" style="width:160px; font-size:0.85rem;">
+                    <input type="text" id="match-name-input" value="対" placeholder="対戦カード（例: 対長田戦）" style="flex:1; min-width:160px; font-size:0.85rem;">
+                    
                     <button class="btn-save-match" onclick="saveMatchData()">保存</button>
                     <button class="btn-reset-stats" onclick="resetCurrentStats()">リセット</button>
                 </div>
@@ -804,22 +877,21 @@
         <div class="card tab-card" id="tab-history">
             <h2>過去データ（試合履歴）</h2>
             <div style="font-size:0.8rem; color:#64748b; margin-bottom:12px;">
-                保存した過去の試合データを選択すると、出場選手の成績データを一覧で直ちに閲覧できます。
+                保存した試合カードを選択すると、各セットのカード一覧が表示されます。
             </div>
 
+            <!-- 2階層表示（試合グループ ➔ セット一覧） -->
             <div class="form-group">
-                <label>保存済み試合を選択</label>
-                <select id="saved-matches-select" style="font-size:0.9rem;" onchange="loadMatchData(this.value)">
-                    <option value="">-- 試合データを選択してください --</option>
-                </select>
+                <div id="history-breadcrumb" style="font-size:0.85rem; font-weight:bold; color:#1e293b; margin-bottom:8px; display:none;"></div>
+                <div id="saved-matches-icons-grid" class="history-card-grid"></div>
             </div>
 
             <div id="selected-match-details" style="margin-top:15px; display:none;">
                 <div class="selected-match-header-row">
                     <div id="match-meta-header" style="font-size:1rem; font-weight:bold; color:#1e293b;"></div>
-                    <div>
-                        <button class="btn-edit" style="padding:8px 14px; font-size:0.8rem; margin-right:6px;" onclick="openEditMatchNameModal()">試合名を編集</button>
-                        <button class="btn-del" style="padding:8px 14px; font-size:0.8rem;" onclick="deleteSelectedMatchData()">この試合データを削除</button>
+                    <div id="single-match-actions">
+                        <button class="btn-edit" style="padding:8px 14px; font-size:0.8rem; margin-right:6px;" onclick="openEditMatchNameModal()">試合名修正</button>
+                        <button class="btn-del" style="padding:8px 14px; font-size:0.8rem;" onclick="deleteSelectedMatchData()">試合データ削除</button>
                     </div>
                 </div>
 
@@ -889,16 +961,12 @@
                     </div>
                     <button class="action-btn" onclick="addIssue()">課題を追加する</button>
 
-                    <div id="team-auto-issues-box" class="ai-advisor-box" style="margin-top:20px;">
-                        <!-- 全試合通算のチーム自動弱点分析結果がここに入ります -->
-                    </div>
+                    <div id="team-auto-issues-box" class="ai-advisor-box" style="margin-top:20px;"></div>
                 </div>
 
                 <div>
                     <h3 style="font-size:1rem; margin-top:0; margin-bottom:12px; color:#1e293b;">登録済み課題一覧</h3>
-                    <div id="issues-list-container">
-                        <!-- 課題カード一覧 -->
-                    </div>
+                    <div id="issues-list-container"></div>
                 </div>
             </div>
         </div>
@@ -1008,7 +1076,7 @@
         <h2>過去試合名の修正</h2>
         <div class="form-group">
             <label>試合名<span class="required">*</span></label>
-            <input type="text" id="history-edit-match-name" placeholder="例: 秋季大会 1回戦">
+            <input type="text" id="history-edit-match-name" placeholder="例: 2026/10/08 春季大会 対長田戦 第1セット">
         </div>
         <div class="modal-actions">
             <button class="action-btn" onclick="saveEditedMatchName()">変更を保存</button>
@@ -1068,12 +1136,12 @@
             </div>
         </div>
 
+        <!-- トスミスのみ -->
         <div class="edit-stat-group">
             <div class="edit-stat-group-title">トス（※セッター用）</div>
-            <div class="grid-3col">
-                <div><label>ナイス</label><input type="number" id="hist-toss-succ" min="0"></div>
-                <div><label>継続</label><input type="number" id="hist-toss-cont" min="0"></div>
-                <div><label>トスミス</label><input type="number" id="hist-toss-err" min="0"></div>
+            <div>
+                <label>トスミス</label>
+                <input type="number" id="hist-toss-err" min="0">
             </div>
         </div>
 
@@ -1118,10 +1186,8 @@
 </div>
 
 <script>
-    // --- チーム共通合言葉設定 ---
-    const TEAM_SHARED_PASSWORD = "seinan2026"; // 任意の合言葉に変更可能です
+    const TEAM_SHARED_PASSWORD = "seinan2026";
 
-    // 認証状態の自動管理とアクセス保護
     function initAppAuth() {
         if (!window.auth || !window.authTools) {
             setTimeout(initAppAuth, 200);
@@ -1132,17 +1198,14 @@
 
         onAuthStateChanged(window.auth, (user) => {
             if (user) {
-                // 匿名認証成功時：Firestore同期を開始し初期描画
                 setupFirestoreSync();
                 render();
             } else {
-                // 未認証時：合言葉入力を要求
                 promptTeamPassword();
             }
         });
     }
 
-    // パスワード入力ダイアログ処理
     async function promptTeamPassword() {
         let inputPass = prompt("【チーム専用アプリ】パスワードを入力してください:");
 
@@ -1156,7 +1219,6 @@
         }
 
         try {
-            // 正しいパスワードが入力されたら裏側でFirebase匿名認証を発行（トークン取得）
             const { signInAnonymously } = window.authTools;
             await signInAnonymously(window.auth);
             showToast("認証に成功しました");
@@ -1206,8 +1268,8 @@
     let savedMatches = JSON.parse(localStorage.getItem('vball9_saved_matches')) || [];
     let teamIssues = JSON.parse(localStorage.getItem('vball9_team_issues')) || [];
     let currentSelectedMatchId = null;
+    let currentSelectedMatchGroupKey = null;
 
-    // クラウド側からの自動更新でループ送信が起きないように制限するフラグ
     let isRemoteUpdate = false;
 
     function switchTab(tabId) {
@@ -1225,6 +1287,7 @@
             renderFlickCourt();
             renderFlickStartersUI();
             renderTeamSummary(players, 'current-team-summary', '📊 チーム全体スタッツ（現在の試合）');
+            initMatchInputDefaults();
         } else if (tabId === 'tab-history') {
             renderSavedMatchesSelect();
         } else if (tabId === 'tab-issues') {
@@ -1232,9 +1295,7 @@
         }
     }
 
-    // 【Firebase Firestore & LocalStorage 同時保存】
     async function saveStorage() {
-        // 1. ローカルストレージに保存
         localStorage.setItem('vball9_players', JSON.stringify(players));
         localStorage.setItem('vball9_starters', JSON.stringify(starters));
         localStorage.setItem('vball9_pin_positions', JSON.stringify(pinPositions));
@@ -1243,10 +1304,8 @@
         localStorage.setItem('vball9_saved_matches', JSON.stringify(savedMatches));
         localStorage.setItem('vball9_team_issues', JSON.stringify(teamIssues));
 
-        // 2. クラウド受信時（リモート更新時）は送信をスキップ
         if (isRemoteUpdate) return;
 
-        // 3. Firestore（クラウド）へ一括保存
         if (window.db && window.firestoreTools) {
             const { doc, setDoc } = window.firestoreTools;
             try {
@@ -1267,7 +1326,6 @@
         }
     }
 
-    // 【Firestore リアルタイム自動受信処理】
     function setupFirestoreSync() {
         if (!window.db || !window.firestoreTools) {
             setTimeout(setupFirestoreSync, 500);
@@ -1277,7 +1335,6 @@
         const { doc, onSnapshot } = window.firestoreTools;
 
         onSnapshot(doc(window.db, "teams", "seinan_data"), (snapshot) => {
-            // ローカルで変更適用中（Pending）のメタデータ変更は上書きをスキップ
             if (snapshot.metadata && snapshot.metadata.hasPendingWrites) {
                 return;
             }
@@ -1285,7 +1342,7 @@
             if (snapshot.exists()) {
                 const data = snapshot.data();
                 
-                isRemoteUpdate = true; // 保存ループ防止フラグをオン
+                isRemoteUpdate = true;
 
                 if (data.players) players = data.players;
                 if (data.starters) starters = data.starters;
@@ -1295,10 +1352,9 @@
                 if (data.savedMatches) savedMatches = data.savedMatches;
                 if (data.teamIssues) teamIssues = data.teamIssues;
 
-                // 画面全体を再描画
                 render();
                 
-                isRemoteUpdate = false; // フラグ解除
+                isRemoteUpdate = false;
                 console.log("クラウド(Firestore)から最新データを受け取りました");
             }
         }, (error) => {
@@ -1329,35 +1385,219 @@
         if (!isSilent) showToast("全選手の記録をリセットしました");
     }
 
+    function initMatchInputDefaults() {
+        const dateInput = document.getElementById('match-date-input');
+        if (dateInput && !dateInput.value) {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            dateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+    }
+
     function saveMatchData() {
-        const inputEl = document.getElementById('match-name-input');
-        const matchName = inputEl.value.trim();
+        const dateEl = document.getElementById('match-date-input');
+        const tourEl = document.getElementById('match-tournament-input');
+        const nameEl = document.getElementById('match-name-input');
 
-        if (!matchName) {
-            alert("試合名を入力してください（例: 秋季大会 1回戦）。");
+        let dateVal = '';
+        if (dateEl && dateEl.value) {
+            const parts = dateEl.value.split('-');
+            dateVal = `${parts[0]}/${parts[1]}/${parts[2]}`;
+        } else {
+            dateVal = new Date().toLocaleDateString('ja-JP');
+        }
+
+        const tourVal = tourEl ? tourEl.value.trim() : '練習試合';
+        const vsVal = nameEl ? nameEl.value.trim() : '対';
+
+        if (!vsVal || vsVal === '対') {
+            alert("対戦相手を入力してください（例: 対長田戦）。");
             return;
         }
 
-        const todayStr = new Date().toLocaleDateString('ja-JP');
-        const isDuplicate = savedMatches.some(m => m.name === matchName);
-        if (isDuplicate) {
-            alert(`同じ名前「${matchName}」の試合データが既に存在します。\n別の試合名で保存してください。`);
-            return;
-        }
+        const matchGroupKey = `${dateVal} ${tourVal} ${vsVal}`;
+
+        const sameGroupMatches = savedMatches.filter(m => (m.matchGroupKey || m.name.replace(/ 第\d+セット$/, '')) === matchGroupKey);
+        const setNum = sameGroupMatches.length + 1;
+        const setLabel = `第${setNum}セット`;
+        const fullTitle = `${matchGroupKey} ${setLabel}`;
 
         const matchRecord = {
             id: Date.now(),
-            name: matchName,
-            date: todayStr,
+            name: fullTitle,
+            matchGroupKey: matchGroupKey,
+            setLabel: setLabel,
+            date: dateVal,
+            tournament: tourVal,
+            vsName: vsVal,
             playersData: JSON.parse(JSON.stringify(players)),
             flickStarters: flickStarters.map(s => String(s || ""))
         };
 
         savedMatches.push(matchRecord);
         saveStorage();
-        inputEl.value = '';
+
+        nameEl.value = '対';
+        if (tourEl) tourEl.value = '';
+
         resetCurrentStats(true);
-        showToast(`「${matchName}」を保存し、記録をリセットしました`);
+        showToast(`「${fullTitle}」を保存しました`);
+    }
+
+    function renderSavedMatchesSelect() {
+        const container = document.getElementById('saved-matches-icons-grid');
+        const breadcrumbEl = document.getElementById('history-breadcrumb');
+        if (!container) return;
+
+        if (savedMatches.length === 0) {
+            container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#94a3b8; padding:20px; font-weight:bold;">保存されている試合データはありません</div>';
+            if (breadcrumbEl) breadcrumbEl.style.display = 'none';
+            return;
+        }
+
+        let html = '';
+
+        if (!currentSelectedMatchGroupKey) {
+            // 【第1階層】親カード（試合グループ一覧）
+            if (breadcrumbEl) breadcrumbEl.style.display = 'none';
+
+            const groups = {};
+            savedMatches.forEach(m => {
+                const groupKey = m.matchGroupKey || m.name.replace(/ 第\d+セット$/, '');
+                if (!groups[groupKey]) {
+                    groups[groupKey] = {
+                        key: groupKey,
+                        date: m.date || '',
+                        sets: []
+                    };
+                }
+                groups[groupKey].sets.push(m);
+            });
+
+            Object.values(groups).forEach(g => {
+                html += `
+                    <div class="history-item-card" onclick="openMatchGroup('${g.key}')">
+                        <span class="history-set-badge">${g.sets.length}セット</span>
+                        <div class="history-icon-circle">📁</div>
+                        <div class="history-card-name" style="margin-top:6px; margin-bottom:4px;">${g.key}</div>
+                        <div class="history-card-date">${g.date}</div>
+                    </div>
+                `;
+            });
+        } else {
+            // 【第2階層】選択中試合の「各セット」および「1試合通算成績」
+            if (breadcrumbEl) {
+                breadcrumbEl.innerHTML = `閲覧中: <span style="color:#2563eb;">${currentSelectedMatchGroupKey}</span>`;
+                breadcrumbEl.style.display = 'block';
+            }
+
+            // 戻るボタン
+            html += `
+                <div class="history-item-card back-btn-card" onclick="backToMatchGroups()">
+                    <div class="history-card-name" style="color:#475569;">⬅ 全試合一覧へ戻る</div>
+                </div>
+            `;
+
+            // 1試合通算成績カード（マークなし・シンプル化）
+            const isTotalSelected = (currentSelectedMatchId === `combined_${currentSelectedMatchGroupKey}`);
+            html += `
+                <div class="history-item-card total-summary-card ${isTotalSelected ? 'selected' : ''}" onclick="loadCombinedMatchDataForGroup('${currentSelectedMatchGroupKey}')">
+                    <div class="history-card-name" style="color:#b45309; font-size:0.9rem;">1試合通算成績</div>
+                    <div class="history-card-date" style="color:#d97706; font-weight:bold; margin-top:4px;">全セット合算</div>
+                </div>
+            `;
+
+            const groupSets = savedMatches.filter(m => (m.matchGroupKey || m.name.replace(/ 第\d+セット$/, '')) === currentSelectedMatchGroupKey);
+
+            // 各セットカード（マークなし・シンプル化）
+            groupSets.forEach(m => {
+                const isSelected = String(m.id) === String(currentSelectedMatchId);
+                const setLabel = m.setLabel || m.name.match(/第\d+セット/) || 'データ';
+
+                html += `
+                    <div class="history-item-card ${isSelected ? 'selected' : ''}" onclick="loadMatchData('${m.id}')">
+                        <div class="history-card-name" style="font-size:0.9rem;">${setLabel}</div>
+                        <div class="history-card-date">${m.date || ''}</div>
+                    </div>
+                `;
+            });
+        }
+
+        container.innerHTML = html;
+    }
+
+    function openMatchGroup(groupKey) {
+        currentSelectedMatchGroupKey = groupKey;
+        const detailsContainer = document.getElementById('selected-match-details');
+        if (detailsContainer) detailsContainer.style.display = 'none';
+        currentSelectedMatchId = null;
+        renderSavedMatchesSelect();
+    }
+
+    function backToMatchGroups() {
+        currentSelectedMatchGroupKey = null;
+        currentSelectedMatchId = null;
+        const detailsContainer = document.getElementById('selected-match-details');
+        if (detailsContainer) detailsContainer.style.display = 'none';
+        renderSavedMatchesSelect();
+    }
+
+    // 特定の試合グループの全セットを1つに合算して表示する関数
+    function loadCombinedMatchDataForGroup(groupKey) {
+        const groupSets = savedMatches.filter(m => (m.matchGroupKey || m.name.replace(/ 第\d+セット$/, '')) === groupKey);
+        if (groupSets.length === 0) return;
+
+        const combinedMatch = {
+            id: `combined_${groupKey}`,
+            name: `${groupKey} 【1試合通算成績 (${groupSets.length}セット)】`,
+            playersData: [],
+            flickStarters: groupSets[0].flickStarters || [],
+            isCombined: true
+        };
+
+        const playerMap = {};
+
+        groupSets.forEach(m => {
+            (m.playersData || []).forEach(p => {
+                const key = String(p.id);
+                if (!playerMap[key]) {
+                    playerMap[key] = JSON.parse(JSON.stringify(p));
+                    playerMap[key].stats = initStatsObj();
+                    playerMap[key].tossDistribution = {};
+                }
+
+                const targetP = playerMap[key];
+                const st = p.stats || initStatsObj();
+
+                ['spike', 'serve', 'block', 'reception', 'toss'].forEach(action => {
+                    if (st[action]) {
+                        targetP.stats[action].success += st[action].success || 0;
+                        targetP.stats[action].continue += st[action].continue || 0;
+                        targetP.stats[action].error += st[action].error || 0;
+                    }
+                });
+                targetP.stats.otherError += st.otherError || 0;
+
+                if (p.tossDistribution) {
+                    Object.keys(p.tossDistribution).forEach(posName => {
+                        targetP.tossDistribution[posName] = (targetP.tossDistribution[posName] || 0) + (p.tossDistribution[posName] || 0);
+                    });
+                }
+            });
+        });
+
+        combinedMatch.playersData = Object.values(playerMap);
+        currentSelectedMatchId = combinedMatch.id;
+
+        renderSavedMatchesSelect();
+        renderMatchPlayerTable(combinedMatch);
+        
+        const actionsEl = document.getElementById('single-match-actions');
+        if (actionsEl) actionsEl.style.display = 'none';
+
+        showToast(`「${groupKey}」の1試合通算成績を表示しました`);
     }
 
     function loadMatchData(matchId) {
@@ -1365,6 +1605,7 @@
         if (!matchId) {
             currentSelectedMatchId = null;
             if (detailsContainer) detailsContainer.style.display = 'none';
+            renderSavedMatchesSelect();
             return;
         }
 
@@ -1372,7 +1613,16 @@
         if (!match) return;
 
         currentSelectedMatchId = match.id;
+        if (match.matchGroupKey) {
+            currentSelectedMatchGroupKey = match.matchGroupKey;
+        }
+
+        renderSavedMatchesSelect();
         renderMatchPlayerTable(match);
+
+        const actionsEl = document.getElementById('single-match-actions');
+        if (actionsEl) actionsEl.style.display = 'block';
+
         showToast(`「${match.name}」を表示しました`);
     }
 
@@ -1577,7 +1827,6 @@
         renderTeamSummary(match.playersData, 'history-team-summary', '📊 チーム全体スタッツ（この試合）');
         renderMatchTop3(match.playersData, matchStarters, 'history-top3-summary');
 
-        // セッターのトス振り分け割合の計算（手動編集値があれば優先、無ければアタッカー打数から集計）
         let teamSpikeTotal = 0;
         const posSpikeCounts = {};
 
@@ -1585,8 +1834,7 @@
             return matchStarters.some((sId, idx) => String(sId) === String(p.id) && FLICK_STARTER_LABELS[idx] === 'セッター');
         });
 
-        if (setterP && setterP.tossDistribution) {
-            // 手動編集されたデータを使用
+        if (setterP && setterP.tossDistribution && Object.keys(setterP.tossDistribution).length > 0) {
             Object.keys(setterP.tossDistribution).forEach(posName => {
                 const cnt = setterP.tossDistribution[posName] || 0;
                 if (cnt > 0) {
@@ -1595,7 +1843,6 @@
                 }
             });
         } else {
-            // 未編集時はアタッカーの打数から自動算出
             matchStarters.forEach((pId, idx) => {
                 if (!pId) return;
                 const p = match.playersData.find(player => String(player.id) === String(pId));
@@ -1612,19 +1859,20 @@
             });
         }
 
-        // 過去データのトス割合カードの表示制御
         const hasSetterInMatch = matchStarters.some((sId, idx) => sId && FLICK_STARTER_LABELS[idx] === 'セッター');
         if (hasSetterInMatch && tossSummaryContainer && tossContentEl) {
             let tossBadgesHtml = '';
             if (teamSpikeTotal === 0) {
                 tossBadgesHtml = '<div style="font-size:0.8rem; color:#64748b; text-align:center;">コート上の配置選手にまだスパイク記録がありません</div>';
             } else {
-                Object.keys(posSpikeCounts).forEach(posName => {
-                    const cnt = posSpikeCounts[posName];
-                    const pct = (cnt / teamSpikeTotal) * 100;
-                    const pctStr = pct.toFixed(1);
-                    let badgeClass = (pct <= 10) ? "cell-warn" : "";
-                    tossBadgesHtml += `<span class="setter-toss-badge ${badgeClass}" style="font-size:0.8rem; padding:4px 10px; margin-right:6px; margin-bottom:6px;">${posName}: ${pctStr}% (${cnt}本)</span>`;
+                FLICK_STARTER_LABELS.forEach(posName => {
+                    if (posSpikeCounts[posName] !== undefined) {
+                        const cnt = posSpikeCounts[posName];
+                        const pct = (cnt / teamSpikeTotal) * 100;
+                        const pctStr = pct.toFixed(1);
+                        let badgeClass = (pct <= 10) ? "cell-warn" : "";
+                        tossBadgesHtml += `<span class="setter-toss-badge ${badgeClass}" style="font-size:0.8rem; padding:4px 10px; margin-right:6px; margin-bottom:6px;">${posName}: ${pctStr}% (${cnt}本)</span>`;
+                    }
                 });
             }
 
@@ -1685,6 +1933,10 @@
                 nameHtml += ` <span class="badge" style="background:#2563eb;">S</span>`;
             }
 
+            const editBtnHtml = match.isCombined 
+                ? '<span style="font-size:0.75rem; color:#94a3b8;">通算成績</span>'
+                : `<button class="btn-edit" style="font-size:0.75rem; padding:4px 8px;" onclick="openEditHistoryPlayerModal('${p.id}')">成績・情報を修正</button>`;
+
             tr.innerHTML = `
                 <td><b>${p.number}</b></td>
                 <td>${nameHtml}</td>
@@ -1693,7 +1945,7 @@
                 <td class="${blockClass}"><b>${st.block.success}本</b><br><span style="font-size:0.7rem;">(ワンタッチ:${st.block.continue})</span></td>
                 <td class="${recClass}"><b>${recRateStr}</b><br><span style="font-size:0.7rem;">(A.Bパス:${st.reception.success}/${recTotal})</span></td>
                 <td class="${otherErrClass}"><b>${otherErr}本</b></td>
-                <td><button class="btn-edit" style="font-size:0.75rem; padding:4px 8px;" onclick="openEditHistoryPlayerModal('${p.id}')">成績・情報を修正</button></td>
+                <td>${editBtnHtml}</td>
             `;
 
             listEl.appendChild(tr);
@@ -1702,7 +1954,6 @@
         detailsContainer.style.display = 'block';
     }
 
-    /* 過去データの試合名修正モーダル開閉 & 保存 */
     function openEditMatchNameModal() {
         if (!currentSelectedMatchId) return;
         const match = savedMatches.find(m => m.id == currentSelectedMatchId);
@@ -1732,7 +1983,6 @@
         }
     }
 
-    /* 過去データ内の選手情報・成績データの編集モーダル */
     function openEditHistoryPlayerModal(playerId) {
         if (!currentSelectedMatchId) return;
         const match = savedMatches.find(m => m.id == currentSelectedMatchId);
@@ -1764,13 +2014,10 @@
         document.getElementById('hist-rec-cont').value = st.reception.continue || 0;
         document.getElementById('hist-rec-err').value = st.reception.error || 0;
 
-        document.getElementById('hist-toss-succ').value = st.toss.success || 0;
-        document.getElementById('hist-toss-cont').value = st.toss.continue || 0;
         document.getElementById('hist-toss-err').value = st.toss.error || 0;
 
         document.getElementById('hist-other-err').value = st.otherError || 0;
 
-        // トス振り分け（各ポジションへの打数）の設定
         const matchStarters = match.flickStarters || [];
         const isSetter = matchStarters.some((sId, idx) => String(sId) === String(pData.id) && FLICK_STARTER_LABELS[idx] === 'セッター');
         const distGroup = document.getElementById('hist-toss-distribution-group');
@@ -1778,7 +2025,6 @@
         if (isSetter) {
             distGroup.style.display = 'block';
             
-            // 既存の手動データがあれば読み込み、無ければ現在のアタッカー打数から設定
             const dist = pData.tossDistribution || {};
             FLICK_STARTER_LABELS.forEach((label, idx) => {
                 const el = document.getElementById(`hist-toss-dist-${idx}`);
@@ -1786,7 +2032,6 @@
                     if (dist[label] !== undefined) {
                         el.value = dist[label];
                     } else {
-                        // アタッカー側の打数から初期値を集計
                         const attackerId = matchStarters[idx];
                         if (attackerId) {
                             const attP = match.playersData.find(p => String(p.id) === String(attackerId));
@@ -1858,14 +2103,13 @@
         };
 
         pData.stats.toss = {
-            success: Math.max(0, parseInt(document.getElementById('hist-toss-succ').value) || 0),
-            continue: Math.max(0, parseInt(document.getElementById('hist-toss-cont').value) || 0),
+            success: 0,
+            continue: 0,
             error: Math.max(0, parseInt(document.getElementById('hist-toss-err').value) || 0)
         };
 
         pData.stats.otherError = Math.max(0, parseInt(document.getElementById('hist-other-err').value) || 0);
 
-        // トス振り分け（手動編集値）の保存
         const matchStarters = match.flickStarters || [];
         const isSetter = matchStarters.some((sId, idx) => String(sId) === String(pData.id) && FLICK_STARTER_LABELS[idx] === 'セッター');
         if (isSetter) {
@@ -1902,19 +2146,6 @@
         showToast("試合データを削除しました");
     }
 
-    function renderSavedMatchesSelect() {
-        const selectEl = document.getElementById('saved-matches-select');
-        if (!selectEl) return;
-
-        let html = `<option value="">-- 試合データを選択してください --</option>`;
-        savedMatches.forEach(m => {
-            const isSelected = m.id == currentSelectedMatchId;
-            html += `<option value="${m.id}" ${isSelected ? 'selected' : ''}>${m.name}</option>`;
-        });
-        selectEl.innerHTML = html;
-    }
-
-    /* チームの課題管理タブのUI描画 */
     function renderIssuesUI() {
         const container = document.getElementById('issues-list-container');
         if (!container) return;
@@ -1960,7 +2191,6 @@
     }
 
     function addIssue() {
-        // 1. フォーカスを外してiPhoneの日本語入力を強制確定
         if (document.activeElement) {
             document.activeElement.blur();
         }
@@ -1970,7 +2200,6 @@
         const priorityEl = document.getElementById('issue-priority-select');
         const descEl = document.getElementById('issue-desc-input');
 
-        // 2. blur後に確定された最新の値を割り当て
         const title = titleEl.value.trim();
         const desc = descEl.value ? descEl.value.trim() : '';
 
@@ -2005,7 +2234,6 @@
         document.getElementById('edit-issue-category').value = issue.category || 'スパイク';
         document.getElementById('edit-issue-priority').value = issue.priority || 'mid';
         
-        // テキストエリアへ最新の文字をセット
         const descEl = document.getElementById('edit-issue-desc');
         descEl.value = issue.desc || '';
 
@@ -2017,7 +2245,6 @@
         const issue = teamIssues.find(i => String(i.id) === String(id));
 
         if (issue) {
-            // 1. フォーカスを外してiPhoneの日本語入力を強制確定
             if (document.activeElement) {
                 document.activeElement.blur();
             }
@@ -2025,7 +2252,6 @@
             const titleEl = document.getElementById('edit-issue-title');
             const descEl = document.getElementById('edit-issue-desc');
 
-            // 2. blur実行後の最新値を適用
             const title = titleEl.value.trim();
             const desc = descEl.value ? descEl.value.trim() : '';
 
@@ -2066,7 +2292,6 @@
         showToast('課題を削除しました');
     }
 
-    /* 過去データ全試合を通じた自動チーム弱点分析 */
     function renderTeamAutoAnalysis() {
         const box = document.getElementById('team-auto-issues-box');
         if (!box) return;
@@ -2224,7 +2449,6 @@
     }
 
     async function addPlayer() {
-        // iPhone文字消去防止：フォーカス解除により変換途中文字列を確定
         if (document.activeElement) {
             document.activeElement.blur();
         }
@@ -2265,7 +2489,6 @@
         saveStorage();
         render();
 
-        // 選手追加後にポジションの選択値をリセット（メイン: レフト / サブ1・2: なし）
         updatePlayerPosSelects('p-', ['レフト', 'なし', 'なし']);
 
         if (window.innerWidth < 900) {
@@ -2467,6 +2690,8 @@
             const posSpikeCounts = {};
             let teamSpikeTotal = 0;
 
+            const TOSS_ORDER = FLICK_STARTER_LABELS;
+
             flickStarters.forEach((pId, idx) => {
                 if (!pId) return;
                 const p = players.find(player => String(player.id) === String(pId));
@@ -2486,17 +2711,19 @@
             if (teamSpikeTotal === 0) {
                 tossBarsHtml = '<div style="font-size:0.8rem; color:#64748b; text-align:center;">コート上の配置選手にまだスパイク記録がありません</div>';
             } else {
-                Object.keys(posSpikeCounts).forEach(courtPosName => {
-                    const cnt = posSpikeCounts[courtPosName];
-                    const pct = ((cnt / teamSpikeTotal) * 100).toFixed(1);
-                    tossBarsHtml += `
-                        <div class="toss-bar-container">
-                            <div class="toss-bar-label"><span>${courtPosName}</span><span>${cnt}本 (${pct}%)</span></div>
-                            <div class="toss-progress-bg">
-                                <div class="toss-progress-fill" style="width: ${pct}%;"></div>
+                TOSS_ORDER.forEach(courtPosName => {
+                    if (posSpikeCounts[courtPosName] !== undefined) {
+                        const cnt = posSpikeCounts[courtPosName];
+                        const pct = ((cnt / teamSpikeTotal) * 100).toFixed(1);
+                        tossBarsHtml += `
+                            <div class="toss-bar-container">
+                                <div class="toss-bar-label"><span>${courtPosName}</span><span>${cnt}本 (${pct}%)</span></div>
+                                <div class="toss-progress-bg">
+                                    <div class="toss-progress-fill" style="width: ${pct}%;"></div>
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    }
                 });
             }
 
@@ -2580,7 +2807,6 @@
     }
 
     async function updatePlayer() {
-        // iPhone文字消去防止：フォーカス解除により変換途中文字列を確定
         if (document.activeElement) {
             document.activeElement.blur();
         }
@@ -2771,7 +2997,6 @@
                     <span class="card-name">${p.name}</span>
                 `;
 
-                // 配置がセッター枠かどうかを判定してイベントを付与
                 const isSetterSlot = (posLabel === 'セッター');
                 attachCardFlickEvents(card, p, isSetterSlot);
             }
@@ -2880,7 +3105,6 @@
                     popMenu.style.display = 'block';
                 } else if (diffX > 15 && Math.abs(diffX) > Math.abs(diffY)) {
                     if (isSetterSlot) {
-                        // セッター枠の場合は「トスミス」固定
                         currentMode = 'toss';
                         popMenu.className = 'flick-pop-menu toss-mode';
                         modeTitle.textContent = 'トス';
@@ -2891,7 +3115,6 @@
                         optRight.style.display = 'block';
                         popMenu.style.display = 'block';
                     } else {
-                        // 通常選手は「レセプション」モード
                         currentMode = 'reception';
                         popMenu.className = 'flick-pop-menu reception-mode';
                         modeTitle.textContent = 'レセプション';
@@ -2944,7 +3167,6 @@
                     else if (diffX > 25) { activeChoice = 'continue'; optRight.classList.add('active'); }
                     else if (diffX < -25) { activeChoice = 'otherError'; optLeft.classList.add('active'); }
                 } else if (currentMode === 'toss') {
-                    // 右方向（diffX > 25）の時のみトスミスを選択。中央に戻した場合（diffX <= 25）は選択なし（キャンセル）
                     if (diffX > 25) {
                         activeChoice = 'error';
                         optRight.classList.add('active');
@@ -3004,16 +3226,12 @@
                     else if (activeChoice === 'error') { player.stats.serve.error++; showToast(`${player.number}番 ${player.name}: サーブミス`); }
                 }
 
-                // 配列内の対象選手データを明示的に更新
                 const pIndex = players.findIndex(p => String(p.id) === String(player.id));
                 if (pIndex !== -1) {
                     players[pIndex].stats = player.stats;
                 }
 
-                // 全体スタッツの再描画を確実に実行
                 renderTeamSummary(players, 'current-team-summary', '📊 チーム全体スタッツ（現在の試合）');
-
-                // ストレージおよびFirestoreに保存
                 saveStorage();
             } else if (!currentMode) {
                 openInfoModal(player, false);
@@ -3190,11 +3408,11 @@
         renderCourt();
         renderSavedMatchesSelect();
         renderTeamSummary(players, 'current-team-summary', '📊 チーム全体スタッツ（現在の試合）');
+        initMatchInputDefaults();
     }
 
     updatePlayerPosSelects('p-');
 
-    // 起動時にチーム認証を開始
     initAppAuth();
 </script>
 
