@@ -323,7 +323,7 @@
         .btn-del { background: #ef4444; padding: 5px 8px; font-size: 0.75rem; color: white; border: none; border-radius: 6px; cursor: pointer; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal { background: white; padding: 24px; border-radius: 16px; width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal { background: white; padding: 24px; border-radius: 16px; width: 90%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
         .btn-cancel { background: #64748b; color: white; border: none; border-radius: 8px; padding: 12px; width: 100%; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
 
@@ -350,11 +350,16 @@
         .flick-pop-menu.block-mode .flick-opt.bottom { top: 25px; left: -25px; background: #dc2626; }
         .flick-pop-menu.block-mode .flick-opt.right { top: -20px; left: 50px; background: #64748b; }
 
+        /* 通常レセプション用 */
         .flick-pop-menu.reception-mode .flick-opt.top { top: -65px; left: -35px; background: #16a34a; }
         .flick-pop-menu.reception-mode .flick-opt.right { top: -20px; left: 50px; background: #ca8a04; }
         .flick-pop-menu.reception-mode .flick-opt.bottom { top: 25px; left: -25px; background: #dc2626; }
         .flick-pop-menu.reception-mode .flick-opt.left { top: -20px; left: -115px; background: #64748b; }
 
+        /* セッター専用トス用（右のみ表示） */
+        .flick-pop-menu.toss-mode .flick-opt.right { top: -20px; left: 50px; background: #dc2626; }
+
+        /* サーブ用（CSS配置の修正） */
         .flick-pop-menu.serve-mode .flick-opt.bottom { top: 25px; left: -45px; background: #16a34a; }
         .flick-pop-menu.serve-mode .flick-opt.left { top: -20px; left: -120px; background: #ca8a04; }
         .flick-pop-menu.serve-mode .flick-opt.right { top: -20px; left: 50px; background: #dc2626; }
@@ -406,7 +411,7 @@
         }
         @media (min-width: 600px) {
             .team-summary-grid {
-                grid-template-columns: repeat(5, 1fr);
+                grid-template-columns: repeat(6, 1fr);
             }
         }
         .team-stat-card {
@@ -513,6 +518,26 @@
         .top3-val {
             font-weight: 800;
             color: #1e293b;
+        }
+
+        /* 過去データ成績編集用スタイル */
+        .grid-3col {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .edit-stat-group {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .edit-stat-group-title {
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: #1e293b;
+            margin-bottom: 6px;
         }
 
         /* チームの課題タブ用スタイル */
@@ -745,7 +770,7 @@
             <div id="current-team-summary" class="team-summary-box"></div>
 
             <div style="font-size:0.8rem; color:#64748b; margin-bottom:12px;">
-                ※選手ボタン上でフリック ➔ <b>上</b>: スパイク / <b>左</b>: ブロック / <b>右</b>: レセプション / <b>下</b>: サーブ<br>
+                ※選手ボタン上でフリック ➔ <b>上</b>: スパイク / <b>左</b>: ブロック / <b>右</b>: レセプション (※セッターはトスミス) / <b>下</b>: サーブ<br>
                 ※フリックせずタップ ➔ 現在の試合の成績を表示
             </div>
 
@@ -792,12 +817,21 @@
             <div id="selected-match-details" style="margin-top:15px; display:none;">
                 <div class="selected-match-header-row">
                     <div id="match-meta-header" style="font-size:1rem; font-weight:bold; color:#1e293b;"></div>
-                    <button class="btn-del" style="padding:8px 14px; font-size:0.8rem;" onclick="deleteSelectedMatchData()">この試合データを削除</button>
+                    <div>
+                        <button class="btn-edit" style="padding:8px 14px; font-size:0.8rem; margin-right:6px;" onclick="openEditMatchNameModal()">試合名を編集</button>
+                        <button class="btn-del" style="padding:8px 14px; font-size:0.8rem;" onclick="deleteSelectedMatchData()">この試合データを削除</button>
+                    </div>
                 </div>
 
                 <div id="history-team-summary" class="team-summary-box"></div>
 
                 <div id="history-top3-summary" class="top3-section-box"></div>
+
+                <!-- 過去データのトス割合独立エリア -->
+                <div id="history-toss-summary" class="top3-section-box" style="display:none; background:#eff6ff; border-color:#bfdbfe;">
+                    <div class="top3-section-title" style="color:#1e4ed8; border-bottom-color:#bfdbfe;">トス割合 (セッターの配球)</div>
+                    <div id="history-toss-content"></div>
+                </div>
 
                 <div class="table-wrapper">
                     <table>
@@ -810,6 +844,7 @@
                                 <th>ブロック</th>
                                 <th>レセプション</th>
                                 <th>その他ミス</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="history-player-list"></tbody>
@@ -963,6 +998,110 @@
         <div class="modal-actions">
             <button class="action-btn" onclick="updateIssue()">変更を保存する</button>
             <button class="btn-cancel" onclick="closeModal('edit-issue-modal')">キャンセル</button>
+        </div>
+    </div>
+</div>
+
+<!-- 過去データの試合名編集モーダル -->
+<div class="modal-overlay" id="edit-match-name-modal">
+    <div class="modal">
+        <h2>過去試合名の修正</h2>
+        <div class="form-group">
+            <label>試合名<span class="required">*</span></label>
+            <input type="text" id="history-edit-match-name" placeholder="例: 秋季大会 1回戦">
+        </div>
+        <div class="modal-actions">
+            <button class="action-btn" onclick="saveEditedMatchName()">変更を保存</button>
+            <button class="btn-cancel" onclick="closeModal('edit-match-name-modal')">キャンセル</button>
+        </div>
+    </div>
+</div>
+
+<!-- 過去データの選手成績・基本情報編集モーダル -->
+<div class="modal-overlay" id="edit-history-player-modal">
+    <div class="modal">
+        <h2>過去データ内 選手成績の修正</h2>
+        <input type="hidden" id="history-edit-player-id">
+        
+        <div class="form-group">
+            <label>背番号<span class="required">*</span></label>
+            <input type="number" id="history-edit-number" min="1" max="99">
+        </div>
+        <div class="form-group">
+            <label>名前<span class="required">*</span></label>
+            <input type="text" id="history-edit-name">
+        </div>
+
+        <div class="edit-stat-group">
+            <div class="edit-stat-group-title">スパイク</div>
+            <div class="grid-3col">
+                <div><label>成功 (得点)</label><input type="number" id="hist-spike-succ" min="0"></div>
+                <div><label>継続</label><input type="number" id="hist-spike-cont" min="0"></div>
+                <div><label>ミス</label><input type="number" id="hist-spike-err" min="0"></div>
+            </div>
+        </div>
+
+        <div class="edit-stat-group">
+            <div class="edit-stat-group-title">サーブ</div>
+            <div class="grid-3col">
+                <div><label>有効 (エース/崩し)</label><input type="number" id="hist-serve-succ" min="0"></div>
+                <div><label>継続</label><input type="number" id="hist-serve-cont" min="0"></div>
+                <div><label>ミス</label><input type="number" id="hist-serve-err" min="0"></div>
+            </div>
+        </div>
+
+        <div class="edit-stat-group">
+            <div class="edit-stat-group-title">ブロック</div>
+            <div class="grid-3col">
+                <div><label>成功 (得点)</label><input type="number" id="hist-block-succ" min="0"></div>
+                <div><label>ワンタッチ</label><input type="number" id="hist-block-cont" min="0"></div>
+                <div><label>ミス</label><input type="number" id="hist-block-err" min="0"></div>
+            </div>
+        </div>
+
+        <div class="edit-stat-group">
+            <div class="edit-stat-group-title">レセプション</div>
+            <div class="grid-3col">
+                <div><label>A.Bパス</label><input type="number" id="hist-rec-succ" min="0"></div>
+                <div><label>Cパス</label><input type="number" id="hist-rec-cont" min="0"></div>
+                <div><label>ミス</label><input type="number" id="hist-rec-err" min="0"></div>
+            </div>
+        </div>
+
+        <div class="edit-stat-group">
+            <div class="edit-stat-group-title">トス（※セッター用）</div>
+            <div class="grid-3col">
+                <div><label>ナイス</label><input type="number" id="hist-toss-succ" min="0"></div>
+                <div><label>継続</label><input type="number" id="hist-toss-cont" min="0"></div>
+                <div><label>トスミス</label><input type="number" id="hist-toss-err" min="0"></div>
+            </div>
+        </div>
+
+        <!-- トス振り分け（各ポジ打数）の編集 -->
+        <div class="edit-stat-group" id="hist-toss-distribution-group">
+            <div class="edit-stat-group-title">トス振り分け（各ポジションへの配球打数）</div>
+            <div style="font-size:0.75rem; color:#64748b; margin-bottom:8px;">※この選手がセッター時に配球したアタッカー別のトス打数</div>
+            <div class="grid-3col" style="row-gap:8px;">
+                <div><label>レフト</label><input type="number" id="hist-toss-dist-0" min="0"></div>
+                <div><label>レフトセミ</label><input type="number" id="hist-toss-dist-1" min="0"></div>
+                <div><label>クイック</label><input type="number" id="hist-toss-dist-2" min="0"></div>
+                <div><label>セッター</label><input type="number" id="hist-toss-dist-3" min="0"></div>
+                <div><label>ライトセミ</label><input type="number" id="hist-toss-dist-4" min="0"></div>
+                <div><label>ライト</label><input type="number" id="hist-toss-dist-5" min="0"></div>
+                <div><label>レフトバック</label><input type="number" id="hist-toss-dist-6" min="0"></div>
+                <div><label>センターバック</label><input type="number" id="hist-toss-dist-7" min="0"></div>
+                <div><label>ライトバック</label><input type="number" id="hist-toss-dist-8" min="0"></div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>その他ミス</label>
+            <input type="number" id="hist-other-err" min="0">
+        </div>
+
+        <div class="modal-actions">
+            <button class="action-btn" onclick="saveEditedHistoryPlayerData()">変更を保存</button>
+            <button class="btn-cancel" onclick="closeModal('edit-history-player-modal')">キャンセル</button>
         </div>
     </div>
 </div>
@@ -1173,6 +1312,7 @@
             serve: { success: 0, continue: 0, error: 0 },
             block: { success: 0, continue: 0, error: 0 },
             reception: { success: 0, continue: 0, error: 0 },
+            toss: { success: 0, continue: 0, error: 0 },
             otherError: 0
         };
     }
@@ -1244,6 +1384,7 @@
         let totalServeEffective = 0, totalServeAll = 0;
         let totalBlockSucc = 0, totalBlock1Touch = 0;
         let totalRecSucc = 0, totalRecAll = 0;
+        let totalTossErr = 0;
         let totalOtherErr = 0;
 
         targetPlayersData.forEach(p => {
@@ -1259,6 +1400,10 @@
 
             totalRecSucc += st.reception.success || 0;
             totalRecAll += (st.reception.success + st.reception.continue + st.reception.error) || 0;
+
+            if (st.toss) {
+                totalTossErr += st.toss.error || 0;
+            }
 
             totalOtherErr += st.otherError || 0;
         });
@@ -1291,9 +1436,14 @@
                     <div class="team-stat-sub">（A.Bパス${totalRecSucc}/${totalRecAll}本）</div>
                 </div>
                 <div class="team-stat-card">
+                    <div class="team-stat-label">トスミス</div>
+                    <div class="team-stat-val">${totalTossErr}本</div>
+                    <div class="team-stat-sub">（コンビミス・ドリブル）</div>
+                </div>
+                <div class="team-stat-card">
                     <div class="team-stat-label">その他ミス</div>
                     <div class="team-stat-val">${totalOtherErr}本</div>
-                    <div class="team-stat-sub">（コンビミス・反則等）</div>
+                    <div class="team-stat-sub">（軽率なミス・反則等）</div>
                 </div>
             </div>
         `;
@@ -1404,6 +1554,9 @@
         const detailsContainer = document.getElementById('selected-match-details');
         const headerEl = document.getElementById('match-meta-header');
         const listEl = document.getElementById('history-player-list');
+        const tossSummaryContainer = document.getElementById('history-toss-summary');
+        const tossContentEl = document.getElementById('history-toss-content');
+
         if (!detailsContainer || !headerEl || !listEl) return;
 
         headerEl.textContent = `閲覧中データ: ${match.name}`;
@@ -1424,23 +1577,65 @@
         renderTeamSummary(match.playersData, 'history-team-summary', '📊 チーム全体スタッツ（この試合）');
         renderMatchTop3(match.playersData, matchStarters, 'history-top3-summary');
 
+        // セッターのトス振り分け割合の計算（手動編集値があれば優先、無ければアタッカー打数から集計）
         let teamSpikeTotal = 0;
         const posSpikeCounts = {};
 
-        matchStarters.forEach((pId, idx) => {
-            if (!pId) return;
-            const p = match.playersData.find(player => String(player.id) === String(pId));
-            if (!p) return;
-
-            const pst = p.stats || initStatsObj();
-            const pSpikeTotal = pst.spike.success + pst.spike.continue + pst.spike.error;
-
-            if (pSpikeTotal > 0) {
-                const posName = FLICK_STARTER_LABELS[idx] || p.position || 'その他';
-                posSpikeCounts[posName] = (posSpikeCounts[posName] || 0) + pSpikeTotal;
-                teamSpikeTotal += pSpikeTotal;
-            }
+        const setterP = match.playersData.find((p) => {
+            return matchStarters.some((sId, idx) => String(sId) === String(p.id) && FLICK_STARTER_LABELS[idx] === 'セッター');
         });
+
+        if (setterP && setterP.tossDistribution) {
+            // 手動編集されたデータを使用
+            Object.keys(setterP.tossDistribution).forEach(posName => {
+                const cnt = setterP.tossDistribution[posName] || 0;
+                if (cnt > 0) {
+                    posSpikeCounts[posName] = cnt;
+                    teamSpikeTotal += cnt;
+                }
+            });
+        } else {
+            // 未編集時はアタッカーの打数から自動算出
+            matchStarters.forEach((pId, idx) => {
+                if (!pId) return;
+                const p = match.playersData.find(player => String(player.id) === String(pId));
+                if (!p) return;
+
+                const pst = p.stats || initStatsObj();
+                const pSpikeTotal = pst.spike.success + pst.spike.continue + pst.spike.error;
+
+                if (pSpikeTotal > 0) {
+                    const posName = FLICK_STARTER_LABELS[idx] || p.position || 'その他';
+                    posSpikeCounts[posName] = (posSpikeCounts[posName] || 0) + pSpikeTotal;
+                    teamSpikeTotal += pSpikeTotal;
+                }
+            });
+        }
+
+        // 過去データのトス割合カードの表示制御
+        const hasSetterInMatch = matchStarters.some((sId, idx) => sId && FLICK_STARTER_LABELS[idx] === 'セッター');
+        if (hasSetterInMatch && tossSummaryContainer && tossContentEl) {
+            let tossBadgesHtml = '';
+            if (teamSpikeTotal === 0) {
+                tossBadgesHtml = '<div style="font-size:0.8rem; color:#64748b; text-align:center;">コート上の配置選手にまだスパイク記録がありません</div>';
+            } else {
+                Object.keys(posSpikeCounts).forEach(posName => {
+                    const cnt = posSpikeCounts[posName];
+                    const pct = (cnt / teamSpikeTotal) * 100;
+                    const pctStr = pct.toFixed(1);
+                    let badgeClass = (pct <= 10) ? "cell-warn" : "";
+                    tossBadgesHtml += `<span class="setter-toss-badge ${badgeClass}" style="font-size:0.8rem; padding:4px 10px; margin-right:6px; margin-bottom:6px;">${posName}: ${pctStr}% (${cnt}本)</span>`;
+                });
+            }
+
+            tossContentEl.innerHTML = `
+                <div style="font-size:0.8rem; color:#475569; margin-bottom:6px;">総アタック打数: <b>${teamSpikeTotal}本</b></div>
+                <div>${tossBadgesHtml}</div>
+            `;
+            tossSummaryContainer.style.display = 'block';
+        } else if (tossSummaryContainer) {
+            tossSummaryContainer.style.display = 'none';
+        }
 
         activePlayersData.forEach(p => {
             const st = p.stats || initStatsObj();
@@ -1449,80 +1644,242 @@
             const isSetterInMatch = matchStarters.some((sId, idx) => String(sId) === String(p.id) && FLICK_STARTER_LABELS[idx] === 'セッター');
             const tr = document.createElement('tr');
 
-            if (isSetterInMatch) {
-                let tossBadgesHtml = '';
-                if (teamSpikeTotal === 0) {
-                    tossBadgesHtml = '<span style="font-size:0.75rem; color:#94a3b8;">アタック記録なし</span>';
-                } else {
-                    Object.keys(posSpikeCounts).forEach(posName => {
-                        const cnt = posSpikeCounts[posName];
-                        const pct = (cnt / teamSpikeTotal) * 100;
-                        const pctStr = pct.toFixed(1);
-                        let badgeClass = (pct <= 10) ? "cell-warn" : "";
-                        tossBadgesHtml += `<span class="setter-toss-badge ${badgeClass}">${posName}: ${pctStr}% (${cnt}本)</span>`;
-                    });
-                }
+            const spikeTotal = st.spike.success + st.spike.continue + st.spike.error;
+            const spikePctNum = spikeTotal > 0 ? (st.spike.success / spikeTotal) * 100 : 0;
+            const spikeRateStr = calcRate(st.spike.success, spikeTotal);
 
-                tr.innerHTML = `
-                    <td><b>${p.number}</b></td>
-                    <td>${photoImg}${p.name} <span class="badge" style="background:#2563eb;">S</span></td>
-                    <td colspan="5">
-                        <div style="font-size:0.75rem; font-weight:bold; color:#1e293b; margin-bottom:2px;">トス振り分け割合 (総トス数: ${teamSpikeTotal}本)</div>
-                        <div>${tossBadgesHtml}</div>
-                    </td>
-                `;
-            } else {
-                const spikeTotal = st.spike.success + st.spike.continue + st.spike.error;
-                const spikePctNum = spikeTotal > 0 ? (st.spike.success / spikeTotal) * 100 : 0;
-                const spikeRateStr = calcRate(st.spike.success, spikeTotal);
-
-                let spikeClass = "";
-                if (spikeTotal > 0) {
-                    if (spikePctNum <= 30) spikeClass = "cell-warn";
-                    else if (spikePctNum >= 60) spikeClass = "cell-nice";
-                }
-
-                const serveTotal = st.serve.success + st.serve.continue + st.serve.error;
-                const serveEffective = st.serve.success || 0;
-                const serveEffectiveRateStr = calcRate(serveEffective, serveTotal);
-                const servePctNum = serveTotal > 0 ? (serveEffective / serveTotal) * 100 : 0;
-                
-                let serveClass = "";
-                if (serveTotal > 0) {
-                    if (servePctNum > 60) serveClass = "cell-nice";
-                    else if (servePctNum < 20) serveClass = "cell-warn";
-                }
-
-                let blockClass = (st.block.success >= 3) ? "cell-nice" : "";
-
-                const recTotal = st.reception.success + st.reception.continue + st.reception.error;
-                const recPctNum = recTotal > 0 ? (st.reception.success / recTotal) * 100 : 0;
-                const recRateStr = calcRate(st.reception.success, recTotal);
-
-                let recClass = "";
-                if (recTotal > 0) {
-                    if (recPctNum <= 60) recClass = "cell-warn";
-                    else if (recPctNum >= 80) recClass = "cell-nice";
-                }
-
-                const otherErr = st.otherError || 0;
-                let otherErrClass = (otherErr >= 3) ? "cell-warn" : "";
-
-                tr.innerHTML = `
-                    <td><b>${p.number}</b></td>
-                    <td>${photoImg}${p.name}</td>
-                    <td class="${spikeClass}"><b>${spikeRateStr}</b><br><span style="font-size:0.7rem;">(${st.spike.success}/${spikeTotal})</span></td>
-                    <td class="${serveClass}"><b>${serveEffectiveRateStr}</b><br><span style="font-size:0.7rem;">(有効:${serveEffective}/全${serveTotal})</span></td>
-                    <td class="${blockClass}"><b>${st.block.success}本</b><br><span style="font-size:0.7rem;">(ワンタッチ:${st.block.continue})</span></td>
-                    <td class="${recClass}"><b>${recRateStr}</b><br><span style="font-size:0.7rem;">(A.Bパス:${st.reception.success}/${recTotal})</span></td>
-                    <td class="${otherErrClass}"><b>${otherErr}本</b></td>
-                `;
+            let spikeClass = "";
+            if (spikeTotal > 0) {
+                if (spikePctNum <= 30) spikeClass = "cell-warn";
+                else if (spikePctNum >= 60) spikeClass = "cell-nice";
             }
+
+            const serveTotal = st.serve.success + st.serve.continue + st.serve.error;
+            const serveEffective = st.serve.success || 0;
+            const serveEffectiveRateStr = calcRate(serveEffective, serveTotal);
+            const servePctNum = serveTotal > 0 ? (serveEffective / serveTotal) * 100 : 0;
+            
+            let serveClass = "";
+            if (serveTotal > 0) {
+                if (servePctNum > 60) serveClass = "cell-nice";
+                else if (servePctNum < 20) serveClass = "cell-warn";
+            }
+
+            let blockClass = (st.block.success >= 3) ? "cell-nice" : "";
+
+            const recTotal = st.reception.success + st.reception.continue + st.reception.error;
+            const recPctNum = recTotal > 0 ? (st.reception.success / recTotal) * 100 : 0;
+            const recRateStr = calcRate(st.reception.success, recTotal);
+
+            let recClass = "";
+            if (recTotal > 0) {
+                if (recPctNum <= 60) recClass = "cell-warn";
+                else if (recPctNum >= 80) recClass = "cell-nice";
+            }
+
+            const otherErr = st.otherError || 0;
+            let otherErrClass = (otherErr >= 3) ? "cell-warn" : "";
+
+            let nameHtml = `${photoImg}${p.name}`;
+            if (isSetterInMatch) {
+                nameHtml += ` <span class="badge" style="background:#2563eb;">S</span>`;
+            }
+
+            tr.innerHTML = `
+                <td><b>${p.number}</b></td>
+                <td>${nameHtml}</td>
+                <td class="${spikeClass}"><b>${spikeRateStr}</b><br><span style="font-size:0.7rem;">(${st.spike.success}/${spikeTotal})</span></td>
+                <td class="${serveClass}"><b>${serveEffectiveRateStr}</b><br><span style="font-size:0.7rem;">(有効:${serveEffective}/全${serveTotal})</span></td>
+                <td class="${blockClass}"><b>${st.block.success}本</b><br><span style="font-size:0.7rem;">(ワンタッチ:${st.block.continue})</span></td>
+                <td class="${recClass}"><b>${recRateStr}</b><br><span style="font-size:0.7rem;">(A.Bパス:${st.reception.success}/${recTotal})</span></td>
+                <td class="${otherErrClass}"><b>${otherErr}本</b></td>
+                <td><button class="btn-edit" style="font-size:0.75rem; padding:4px 8px;" onclick="openEditHistoryPlayerModal('${p.id}')">成績・情報を修正</button></td>
+            `;
 
             listEl.appendChild(tr);
         });
 
         detailsContainer.style.display = 'block';
+    }
+
+    /* 過去データの試合名修正モーダル開閉 & 保存 */
+    function openEditMatchNameModal() {
+        if (!currentSelectedMatchId) return;
+        const match = savedMatches.find(m => m.id == currentSelectedMatchId);
+        if (!match) return;
+
+        document.getElementById('history-edit-match-name').value = match.name || '';
+        document.getElementById('edit-match-name-modal').style.display = 'flex';
+    }
+
+    function saveEditedMatchName() {
+        if (document.activeElement) document.activeElement.blur();
+
+        const newName = document.getElementById('history-edit-match-name').value.trim();
+        if (!newName) {
+            alert('試合名を入力してください。');
+            return;
+        }
+
+        const match = savedMatches.find(m => m.id == currentSelectedMatchId);
+        if (match) {
+            match.name = newName;
+            saveStorage();
+            renderSavedMatchesSelect();
+            renderMatchPlayerTable(match);
+            closeModal('edit-match-name-modal');
+            showToast('試合名を修正しました');
+        }
+    }
+
+    /* 過去データ内の選手情報・成績データの編集モーダル */
+    function openEditHistoryPlayerModal(playerId) {
+        if (!currentSelectedMatchId) return;
+        const match = savedMatches.find(m => m.id == currentSelectedMatchId);
+        if (!match) return;
+
+        const pData = match.playersData.find(p => String(p.id) === String(playerId));
+        if (!pData) return;
+
+        document.getElementById('history-edit-player-id').value = pData.id;
+        document.getElementById('history-edit-number').value = pData.number || '';
+        document.getElementById('history-edit-name').value = pData.name || '';
+
+        const st = pData.stats || initStatsObj();
+        if (!st.toss) st.toss = { success: 0, continue: 0, error: 0 };
+
+        document.getElementById('hist-spike-succ').value = st.spike.success || 0;
+        document.getElementById('hist-spike-cont').value = st.spike.continue || 0;
+        document.getElementById('hist-spike-err').value = st.spike.error || 0;
+
+        document.getElementById('hist-serve-succ').value = st.serve.success || 0;
+        document.getElementById('hist-serve-cont').value = st.serve.continue || 0;
+        document.getElementById('hist-serve-err').value = st.serve.error || 0;
+
+        document.getElementById('hist-block-succ').value = st.block.success || 0;
+        document.getElementById('hist-block-cont').value = st.block.continue || 0;
+        document.getElementById('hist-block-err').value = st.block.error || 0;
+
+        document.getElementById('hist-rec-succ').value = st.reception.success || 0;
+        document.getElementById('hist-rec-cont').value = st.reception.continue || 0;
+        document.getElementById('hist-rec-err').value = st.reception.error || 0;
+
+        document.getElementById('hist-toss-succ').value = st.toss.success || 0;
+        document.getElementById('hist-toss-cont').value = st.toss.continue || 0;
+        document.getElementById('hist-toss-err').value = st.toss.error || 0;
+
+        document.getElementById('hist-other-err').value = st.otherError || 0;
+
+        // トス振り分け（各ポジションへの打数）の設定
+        const matchStarters = match.flickStarters || [];
+        const isSetter = matchStarters.some((sId, idx) => String(sId) === String(pData.id) && FLICK_STARTER_LABELS[idx] === 'セッター');
+        const distGroup = document.getElementById('hist-toss-distribution-group');
+
+        if (isSetter) {
+            distGroup.style.display = 'block';
+            
+            // 既存の手動データがあれば読み込み、無ければ現在のアタッカー打数から設定
+            const dist = pData.tossDistribution || {};
+            FLICK_STARTER_LABELS.forEach((label, idx) => {
+                const el = document.getElementById(`hist-toss-dist-${idx}`);
+                if (el) {
+                    if (dist[label] !== undefined) {
+                        el.value = dist[label];
+                    } else {
+                        // アタッカー側の打数から初期値を集計
+                        const attackerId = matchStarters[idx];
+                        if (attackerId) {
+                            const attP = match.playersData.find(p => String(p.id) === String(attackerId));
+                            if (attP && attP.stats) {
+                                const attSt = attP.stats;
+                                el.value = (attSt.spike.success + attSt.spike.continue + attSt.spike.error) || 0;
+                            } else { el.value = 0; }
+                        } else { el.value = 0; }
+                    }
+                }
+            });
+        } else {
+            distGroup.style.display = 'none';
+        }
+
+        document.getElementById('edit-history-player-modal').style.display = 'flex';
+    }
+
+    function saveEditedHistoryPlayerData() {
+        if (document.activeElement) document.activeElement.blur();
+
+        if (!currentSelectedMatchId) return;
+        const match = savedMatches.find(m => m.id == currentSelectedMatchId);
+        if (!match) return;
+
+        const pId = document.getElementById('history-edit-player-id').value;
+        const pData = match.playersData.find(p => String(p.id) === String(pId));
+        if (!pData) return;
+
+        const newNum = document.getElementById('history-edit-number').value;
+        const newName = document.getElementById('history-edit-name').value.trim();
+
+        if (!newNum || isNaN(newNum) || Number(newNum) < 1 || Number(newNum) > 99) {
+            alert('背番号は1～99の範囲で指定してください。');
+            return;
+        }
+        if (!newName) {
+            alert('選手名を入力してください。');
+            return;
+        }
+
+        pData.number = String(Number(newNum));
+        pData.name = newName;
+
+        if (!pData.stats) pData.stats = initStatsObj();
+
+        pData.stats.spike = {
+            success: Math.max(0, parseInt(document.getElementById('hist-spike-succ').value) || 0),
+            continue: Math.max(0, parseInt(document.getElementById('hist-spike-cont').value) || 0),
+            error: Math.max(0, parseInt(document.getElementById('hist-spike-err').value) || 0)
+        };
+
+        pData.stats.serve = {
+            success: Math.max(0, parseInt(document.getElementById('hist-serve-succ').value) || 0),
+            continue: Math.max(0, parseInt(document.getElementById('hist-serve-cont').value) || 0),
+            error: Math.max(0, parseInt(document.getElementById('hist-serve-err').value) || 0)
+        };
+
+        pData.stats.block = {
+            success: Math.max(0, parseInt(document.getElementById('hist-block-succ').value) || 0),
+            continue: Math.max(0, parseInt(document.getElementById('hist-block-cont').value) || 0),
+            error: Math.max(0, parseInt(document.getElementById('hist-block-err').value) || 0)
+        };
+
+        pData.stats.reception = {
+            success: Math.max(0, parseInt(document.getElementById('hist-rec-succ').value) || 0),
+            continue: Math.max(0, parseInt(document.getElementById('hist-rec-cont').value) || 0),
+            error: Math.max(0, parseInt(document.getElementById('hist-rec-err').value) || 0)
+        };
+
+        pData.stats.toss = {
+            success: Math.max(0, parseInt(document.getElementById('hist-toss-succ').value) || 0),
+            continue: Math.max(0, parseInt(document.getElementById('hist-toss-cont').value) || 0),
+            error: Math.max(0, parseInt(document.getElementById('hist-toss-err').value) || 0)
+        };
+
+        pData.stats.otherError = Math.max(0, parseInt(document.getElementById('hist-other-err').value) || 0);
+
+        // トス振り分け（手動編集値）の保存
+        const matchStarters = match.flickStarters || [];
+        const isSetter = matchStarters.some((sId, idx) => String(sId) === String(pData.id) && FLICK_STARTER_LABELS[idx] === 'セッター');
+        if (isSetter) {
+            pData.tossDistribution = {};
+            FLICK_STARTER_LABELS.forEach((label, idx) => {
+                const val = Math.max(0, parseInt(document.getElementById(`hist-toss-dist-${idx}`).value) || 0);
+                pData.tossDistribution[label] = val;
+            });
+        }
+
+        saveStorage();
+        renderMatchPlayerTable(match);
+        closeModal('edit-history-player-modal');
+        showToast('成績・選手情報を修正しました');
     }
 
     function deleteSelectedMatchData() {
@@ -1770,7 +2127,7 @@
 
         let html = '<div class="ai-advisor-title">過去データ通算の自動課題分析</div>';
         if (autoWeaknesses.length === 0) {
-            html += '<div style="font-size:0.85rem; color:#475569;">現在、データ上での極端なチーム全体の課題は検出されていません。順調なプレイが継続されています。</div>';
+            html += '<div style="font-size:0.8rem; color:#475569;">現在、データ上での極端なチーム全体の課題は検出されていません。順調なプレイが継続されています。</div>';
         } else {
             autoWeaknesses.forEach(w => {
                 html += `<div class="ai-item weakness"><b>【要改善】</b> ${w}</div>`;
@@ -1907,7 +2264,9 @@
         
         saveStorage();
         render();
-        updatePlayerPosSelects('p-');
+
+        // 選手追加後にポジションの選択値をリセット（メイン: レフト / サブ1・2: なし）
+        updatePlayerPosSelects('p-', ['レフト', 'なし', 'なし']);
 
         if (window.innerWidth < 900) {
             switchTab('tab-list');
@@ -1967,7 +2326,7 @@
             const pData = match.playersData.find(p => String(p.id) === String(playerId));
             if (pData && pData.stats) {
                 const st = pData.stats;
-                ['spike', 'serve', 'block', 'reception'].forEach(action => {
+                ['spike', 'serve', 'block', 'reception', 'toss'].forEach(action => {
                     if (st[action]) {
                         combined[action].success += st[action].success || 0;
                         combined[action].continue += st[action].continue || 0;
@@ -1981,7 +2340,7 @@
         const currentP = players.find(p => String(p.id) === String(playerId));
         if (currentP && currentP.stats) {
             const st = currentP.stats;
-            ['spike', 'serve', 'block', 'reception'].forEach(action => {
+            ['spike', 'serve', 'block', 'reception', 'toss'].forEach(action => {
                 if (st[action]) {
                     combined[action].success += st[action].success || 0;
                     combined[action].continue += st[action].continue || 0;
@@ -2412,7 +2771,9 @@
                     <span class="card-name">${p.name}</span>
                 `;
 
-                attachCardFlickEvents(card, p);
+                // 配置がセッター枠かどうかを判定してイベントを付与
+                const isSetterSlot = (posLabel === 'セッター');
+                attachCardFlickEvents(card, p, isSetterSlot);
             }
 
             if (idx < 6) {
@@ -2433,7 +2794,7 @@
         return { x: e.clientX, y: e.clientY };
     }
 
-    function attachCardFlickEvents(cardElement, player) {
+    function attachCardFlickEvents(cardElement, player, isSetterSlot = false) {
         let startX = 0, startY = 0;
         let isDragging = false;
         let currentMode = null;
@@ -2499,6 +2860,9 @@
                     optTop.textContent = '得点';
                     optRight.textContent = 'ミス';
                     optBottom.textContent = 'その他ミス';
+                    optLeft.style.display = 'block';
+                    optTop.style.display = 'block';
+                    optRight.style.display = 'block';
                     optBottom.style.display = 'block';
                     popMenu.style.display = 'block';
                 } else if (diffX < -15 && Math.abs(diffX) > Math.abs(diffY)) {
@@ -2509,18 +2873,38 @@
                     optLeft.textContent = 'ワンタッチ';
                     optBottom.textContent = 'ミス';
                     optRight.textContent = 'その他ミス';
+                    optLeft.style.display = 'block';
+                    optTop.style.display = 'block';
+                    optRight.style.display = 'block';
                     optBottom.style.display = 'block';
                     popMenu.style.display = 'block';
                 } else if (diffX > 15 && Math.abs(diffX) > Math.abs(diffY)) {
-                    currentMode = 'reception';
-                    popMenu.className = 'flick-pop-menu reception-mode';
-                    modeTitle.textContent = 'レセプション';
-                    optTop.textContent = 'A.Bパス';
-                    optRight.textContent = 'Cパス';
-                    optBottom.textContent = 'ミス';
-                    optLeft.textContent = 'その他ミス';
-                    optBottom.style.display = 'block';
-                    popMenu.style.display = 'block';
+                    if (isSetterSlot) {
+                        // セッター枠の場合は「トスミス」固定
+                        currentMode = 'toss';
+                        popMenu.className = 'flick-pop-menu toss-mode';
+                        modeTitle.textContent = 'トス';
+                        optRight.textContent = 'トスミス';
+                        optLeft.style.display = 'none';
+                        optTop.style.display = 'none';
+                        optBottom.style.display = 'none';
+                        optRight.style.display = 'block';
+                        popMenu.style.display = 'block';
+                    } else {
+                        // 通常選手は「レセプション」モード
+                        currentMode = 'reception';
+                        popMenu.className = 'flick-pop-menu reception-mode';
+                        modeTitle.textContent = 'レセプション';
+                        optTop.textContent = 'A.Bパス';
+                        optRight.textContent = 'Cパス';
+                        optBottom.textContent = 'ミス';
+                        optLeft.textContent = 'その他ミス';
+                        optLeft.style.display = 'block';
+                        optTop.style.display = 'block';
+                        optRight.style.display = 'block';
+                        optBottom.style.display = 'block';
+                        popMenu.style.display = 'block';
+                    }
                 } else if (diffY > 15 && Math.abs(diffY) > Math.abs(diffX)) {
                     currentMode = 'serve';
                     popMenu.className = 'flick-pop-menu serve-mode';
@@ -2529,6 +2913,9 @@
                     optLeft.textContent = 'チャンスサーブ';
                     optRight.textContent = 'ミス';
                     optTop.textContent = 'その他ミス';
+                    optLeft.style.display = 'block';
+                    optTop.style.display = 'block';
+                    optRight.style.display = 'block';
                     optBottom.style.display = 'block';
                     popMenu.style.display = 'block';
                 }
@@ -2556,6 +2943,12 @@
                     else if (diffY < -25) { activeChoice = 'success'; optTop.classList.add('active'); }
                     else if (diffX > 25) { activeChoice = 'continue'; optRight.classList.add('active'); }
                     else if (diffX < -25) { activeChoice = 'otherError'; optLeft.classList.add('active'); }
+                } else if (currentMode === 'toss') {
+                    // 右方向（diffX > 25）の時のみトスミスを選択。中央に戻した場合（diffX <= 25）は選択なし（キャンセル）
+                    if (diffX > 25) {
+                        activeChoice = 'error';
+                        optRight.classList.add('active');
+                    }
                 } else if (currentMode === 'serve') {
                     if (diffY > 30) { activeChoice = 'success'; optBottom.classList.add('active'); }
                     else if (diffX < -25) { activeChoice = 'continue'; optLeft.classList.add('active'); }
@@ -2585,6 +2978,7 @@
             window.removeEventListener('touchend', endHandler);
 
             if (!player.stats) player.stats = initStatsObj();
+            if (!player.stats.toss) player.stats.toss = { success: 0, continue: 0, error: 0 };
 
             if (currentMode && activeChoice) {
                 if (activeChoice === 'otherError') {
@@ -2602,6 +2996,8 @@
                     if (activeChoice === 'success') { player.stats.reception.success++; showToast(`${player.number}番 ${player.name}: レセプション A.Bパス！`); }
                     else if (activeChoice === 'continue') { player.stats.reception.continue++; showToast(`${player.number}番 ${player.name}: レセプション Cパス`); }
                     else if (activeChoice === 'error') { player.stats.reception.error++; showToast(`${player.number}番 ${player.name}: レセプションミス`); }
+                } else if (currentMode === 'toss') {
+                    if (activeChoice === 'error') { player.stats.toss.error++; showToast(`${player.number}番 ${player.name}: トスミス`); }
                 } else if (currentMode === 'serve') {
                     if (activeChoice === 'success') { player.stats.serve.success++; showToast(`${player.number}番 ${player.name}: エース/崩したサーブ`); }
                     else if (activeChoice === 'continue') { player.stats.serve.continue++; showToast(`${player.number}番 ${player.name}: チャンスサーブ`); }
