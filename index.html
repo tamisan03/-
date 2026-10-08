@@ -305,6 +305,8 @@
         .big-player-card .card-cond { position: absolute; top: 5px; left: 5px; font-size: 0.95rem; }
 
         .empty-card { background: #e2e8f0; border: 2px dashed #cbd5e1; color: #94a3b8; font-size: 0.8rem; font-weight: bold; }
+
+        /* テーブルラッパー：縦スクロールを廃止し全選手を一括表示 */
         .table-wrapper {
             width: 100%;
             max-height: none;
@@ -316,10 +318,11 @@
 
         table {
             width: 100%;
-            min-width: 600px; /* iPhoneで文字が潰れすぎるのを防止 */
+            min-width: 600px;
             border-collapse: collapse;
             margin: 0 auto;
         }
+
         th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
         th { background: #f1f5f9; color: #475569; position: sticky; top: 0; z-index: 2; }
         
@@ -360,16 +363,13 @@
         .flick-pop-menu.block-mode .flick-opt.bottom { top: 25px; left: -25px; background: #dc2626; }
         .flick-pop-menu.block-mode .flick-opt.right { top: -20px; left: 50px; background: #64748b; }
 
-        /* 通常レセプション用 */
         .flick-pop-menu.reception-mode .flick-opt.top { top: -65px; left: -35px; background: #16a34a; }
         .flick-pop-menu.reception-mode .flick-opt.right { top: -20px; left: 50px; background: #ca8a04; }
         .flick-pop-menu.reception-mode .flick-opt.bottom { top: 25px; left: -25px; background: #dc2626; }
         .flick-pop-menu.reception-mode .flick-opt.left { top: -20px; left: -115px; background: #64748b; }
 
-        /* セッター専用トス用（右のみ表示） */
         .flick-pop-menu.toss-mode .flick-opt.right { top: -20px; left: 50px; background: #dc2626; }
 
-        /* サーブ用 */
         .flick-pop-menu.serve-mode .flick-opt.bottom { top: 25px; left: -45px; background: #16a34a; }
         .flick-pop-menu.serve-mode .flick-opt.left { top: -20px; left: -120px; background: #ca8a04; }
         .flick-pop-menu.serve-mode .flick-opt.right { top: -20px; left: 50px; background: #dc2626; }
@@ -385,7 +385,6 @@
         .btn-reset-stats { background: #ef4444; color: white; border: none; padding: 10px 14px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; cursor: pointer; white-space: nowrap; }
         .btn-save-match { background: #16a34a; color: white; border: none; padding: 10px 14px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; cursor: pointer; white-space: nowrap; }
 
-        /* 青い下線を削除したヘッダー表示 */
         .selected-match-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; }
         .setter-toss-badge { display: inline-block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e4ed8; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; margin-bottom: 4px; font-weight: bold; }
 
@@ -578,19 +577,6 @@
             border-radius: 10px;
         }
 
-        .history-icon-circle {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: #dbeafe;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            margin-bottom: 6px;
-        }
-
         .history-card-name {
             font-size: 0.85rem;
             font-weight: bold;
@@ -694,10 +680,26 @@
         .status-wip { background: #fef3c7; color: #92400e; }
         .status-done { background: #dcfce7; color: #166534; }
 
-        #issue-desc-input, #edit-issue-desc {
-            min-height: 120px;
-            font-size: 0.95rem;
-            line-height: 1.5;
+        /* iPhone・スマホ画面向け全体レイアウト・カード均一最適化 */
+        @media (max-width: 767px) {
+            body { padding: 8px; }
+            .container { gap: 12px; }
+            .card { padding: 12px; border-radius: 12px; }
+            .tab-nav { gap: 4px; padding: 4px; }
+            .tab-btn { padding: 8px 4px; font-size: 0.78rem; }
+            .history-card-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; padding: 4px; }
+            .history-item-card { min-height: 70px; padding: 8px 6px; border-radius: 8px; }
+            .history-card-name { font-size: 0.78rem; }
+            .history-card-date { font-size: 0.65rem; }
+            .team-summary-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+            .team-stat-card { padding: 6px; min-height: 52px; display: flex; flex-direction: column; justify-content: center; }
+            .team-stat-label { font-size: 0.65rem; }
+            .team-stat-val { font-size: 0.95rem; }
+            .team-stat-sub { font-size: 0.6rem; }
+            .top3-grid { grid-template-columns: 1fr; gap: 8px; }
+            .top3-card { padding: 8px 10px; }
+            table th, table td { padding: 8px 4px; font-size: 0.78rem; }
+            .btn-edit, .btn-del { padding: 4px 6px; font-size: 0.7rem; }
         }
     </style>
 </head>
@@ -904,8 +906,8 @@
                 <div class="selected-match-header-row">
                     <div id="match-meta-header" style="font-size:1rem; font-weight:bold; color:#1e293b;"></div>
                     <div id="single-match-actions">
-                        <button class="btn-edit" style="padding:8px 14px; font-size:0.8rem; margin-right:6px;" onclick="openEditMatchNameModal()">試合名修正</button>
-                        <button class="btn-del" style="padding:8px 14px; font-size:0.8rem;" onclick="deleteSelectedMatchData()">試合データ削除</button>
+                        <button class="btn-edit" style="padding:8px 14px; font-size:0.8rem; margin-right:6px;" onclick="openEditMatchNameModal()">試合名を編集</button>
+                        <button class="btn-del" style="padding:8px 14px; font-size:0.8rem;" onclick="deleteSelectedMatchData()">この試合データを削除</button>
                     </div>
                 </div>
 
@@ -913,7 +915,6 @@
 
                 <div id="history-top3-summary" class="top3-section-box"></div>
 
-                <!-- 過去データのトス割合独立エリア -->
                 <div id="history-toss-summary" class="top3-section-box" style="display:none; background:#eff6ff; border-color:#bfdbfe;">
                     <div class="top3-section-title" style="color:#1e4ed8; border-bottom-color:#bfdbfe;">トス割合 (セッターの配球)</div>
                     <div id="history-toss-content"></div>
@@ -1150,7 +1151,6 @@
             </div>
         </div>
 
-        <!-- トスミスのみ -->
         <div class="edit-stat-group">
             <div class="edit-stat-group-title">トス（※セッター用）</div>
             <div>
@@ -1159,7 +1159,6 @@
             </div>
         </div>
 
-        <!-- トス振り分け（各ポジ打数）の編集 -->
         <div class="edit-stat-group" id="hist-toss-distribution-group">
             <div class="edit-stat-group-title">トス振り分け（各ポジションへの配球打数）</div>
             <div style="font-size:0.75rem; color:#64748b; margin-bottom:8px;">※この選手がセッター時に配球したアタッカー別のトス打数</div>
@@ -1474,7 +1473,6 @@
         let html = '';
 
         if (!currentSelectedMatchGroupKey) {
-            // 【第1階層】親カード（試合グループ一覧）
             if (breadcrumbEl) breadcrumbEl.style.display = 'none';
 
             const groups = {};
@@ -1494,27 +1492,23 @@
                 html += `
                     <div class="history-item-card" onclick="openMatchGroup('${g.key}')">
                         <span class="history-set-badge">${g.sets.length}セット</span>
-                        <div class="history-icon-circle">📁</div>
                         <div class="history-card-name" style="margin-top:6px; margin-bottom:4px;">${g.key}</div>
                         <div class="history-card-date">${g.date}</div>
                     </div>
                 `;
             });
         } else {
-            // 【第2階層】選択中試合の「各セット」および「1試合通算成績」
             if (breadcrumbEl) {
                 breadcrumbEl.innerHTML = `閲覧中: <span style="color:#2563eb;">${currentSelectedMatchGroupKey}</span>`;
                 breadcrumbEl.style.display = 'block';
             }
 
-            // 戻るボタン
             html += `
                 <div class="history-item-card back-btn-card" onclick="backToMatchGroups()">
                     <div class="history-card-name" style="color:#475569;">⬅ 全試合一覧へ戻る</div>
                 </div>
             `;
 
-            // 1試合通算成績カード（マークなし・シンプル化）
             const isTotalSelected = (currentSelectedMatchId === `combined_${currentSelectedMatchGroupKey}`);
             html += `
                 <div class="history-item-card total-summary-card ${isTotalSelected ? 'selected' : ''}" onclick="loadCombinedMatchDataForGroup('${currentSelectedMatchGroupKey}')">
@@ -1525,7 +1519,6 @@
 
             const groupSets = savedMatches.filter(m => (m.matchGroupKey || m.name.replace(/ 第\d+セット$/, '')) === currentSelectedMatchGroupKey);
 
-            // 各セットカード（マークなし・シンプル化）
             groupSets.forEach(m => {
                 const isSelected = String(m.id) === String(currentSelectedMatchId);
                 const setLabel = m.setLabel || m.name.match(/第\d+セット/) || 'データ';
@@ -1558,7 +1551,6 @@
         renderSavedMatchesSelect();
     }
 
-    // 特定の試合グループの全セットを1つに合算して表示する関数
     function loadCombinedMatchDataForGroup(groupKey) {
         const groupSets = savedMatches.filter(m => (m.matchGroupKey || m.name.replace(/ 第\d+セット$/, '')) === groupKey);
         if (groupSets.length === 0) return;
