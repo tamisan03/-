@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>9人制バレーボール チーム管理 (iPad完全対応版)</title>
+    <title>9人制バレーボール チーム管理 (iPad/iPhone完全対応版)</title>
 
     <!-- Firebase SDK (v10.8.0) の初期化設定 -->
     <script type="module">
@@ -318,7 +318,6 @@
 
         table {
             width: 100%;
-            min-width: 600px;
             border-collapse: collapse;
             margin: 0 auto;
         }
@@ -680,26 +679,98 @@
         .status-wip { background: #fef3c7; color: #92400e; }
         .status-done { background: #dcfce7; color: #166534; }
 
-        /* iPhone・スマホ画面向け全体レイアウト・カード均一最適化 */
+        /* --- スマホ縦画面（画面幅767px以下）専用：横スクロール完全廃止・画面内ジャスト収まりCSS --- */
         @media (max-width: 767px) {
-            body { padding: 8px; }
-            .container { gap: 12px; }
-            .card { padding: 12px; border-radius: 12px; }
-            .tab-nav { gap: 4px; padding: 4px; }
-            .tab-btn { padding: 8px 4px; font-size: 0.78rem; }
-            .history-card-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; padding: 4px; }
-            .history-item-card { min-height: 70px; padding: 8px 6px; border-radius: 8px; }
-            .history-card-name { font-size: 0.78rem; }
-            .history-card-date { font-size: 0.65rem; }
-            .team-summary-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-            .team-stat-card { padding: 6px; min-height: 52px; display: flex; flex-direction: column; justify-content: center; }
-            .team-stat-label { font-size: 0.65rem; }
-            .team-stat-val { font-size: 0.95rem; }
-            .team-stat-sub { font-size: 0.6rem; }
-            .top3-grid { grid-template-columns: 1fr; gap: 8px; }
-            .top3-card { padding: 8px 10px; }
-            table th, table td { padding: 8px 4px; font-size: 0.78rem; }
-            .btn-edit, .btn-del { padding: 4px 6px; font-size: 0.7rem; }
+            html, body {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow-x: hidden !important;
+                padding: 6px !important;
+                box-sizing: border-box !important;
+            }
+
+            .container {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 auto !important;
+                padding: 0 !important;
+                box-sizing: border-box !important;
+            }
+
+            .card, .match-data-panel, .team-summary-box, .top3-section-box {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                padding: 8px !important;
+            }
+
+            .table-wrapper {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow-x: hidden !important;
+                overflow-y: visible !important;
+                box-sizing: border-box !important;
+                margin: 0 auto !important;
+            }
+
+            table {
+                width: 100% !important;
+                min-width: 0 !important;
+                table-layout: fixed !important;
+                border-collapse: collapse !important;
+            }
+
+            table th:nth-child(1), table td:nth-child(1) { width: 9%; text-align: center; }
+            table th:nth-child(2), table td:nth-child(2) { width: 20%; }
+            table th:nth-child(3), table td:nth-child(3) { width: 14%; text-align: center; }
+            table th:nth-child(4), table td:nth-child(4) { width: 14%; text-align: center; }
+            table th:nth-child(5), table td:nth-child(5) { width: 13%; text-align: center; }
+            table th:nth-child(6), table td:nth-child(6) { width: 14%; text-align: center; }
+            table th:nth-child(7), table td:nth-child(7) { width: 8%; text-align: center; }
+            table th:nth-child(8), table td:nth-child(8) { width: 8%; text-align: center; }
+
+            table th, table td {
+                padding: 6px 1px !important;
+                font-size: 0.68rem !important;
+                word-break: break-all !important;
+                line-height: 1.2 !important;
+            }
+
+            .list-photo {
+                width: 20px !important;
+                height: 20px !important;
+                margin-right: 2px !important;
+            }
+
+            .btn-edit {
+                padding: 3px 2px !important;
+                font-size: 0.6rem !important;
+                border-radius: 4px !important;
+            }
+
+            .history-card-grid {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
+                gap: 6px !important;
+                padding: 2px !important;
+            }
+
+            .history-item-card {
+                padding: 6px 4px !important;
+                min-height: 60px !important;
+            }
+
+            .history-card-name { font-size: 0.72rem !important; }
+            .history-card-date { font-size: 0.6rem !important; }
+
+            .panel-row {
+                flex-direction: column !important;
+                width: 100% !important;
+            }
+
+            .panel-row input, .panel-row select, .panel-row button {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
         }
     </style>
 </head>
@@ -896,7 +967,6 @@
                 保存した試合カードを選択すると、各セットのカード一覧が表示されます。
             </div>
 
-            <!-- 2階層表示（試合グループ ➔ セット一覧） -->
             <div class="form-group">
                 <div id="history-breadcrumb" style="font-size:0.85rem; font-weight:bold; color:#1e293b; margin-bottom:8px; display:none;"></div>
                 <div id="saved-matches-icons-grid" class="history-card-grid"></div>
@@ -1940,16 +2010,16 @@
             }
 
             const editBtnHtml = match.isCombined 
-                ? '<span style="font-size:0.75rem; color:#94a3b8;">通算成績</span>'
-                : `<button class="btn-edit" style="font-size:0.75rem; padding:4px 8px;" onclick="openEditHistoryPlayerModal('${p.id}')">成績・情報を修正</button>`;
+                ? '<span style="font-size:0.75rem; color:#94a3b8;">通算</span>'
+                : `<button class="btn-edit" onclick="openEditHistoryPlayerModal('${p.id}')">修正</button>`;
 
             tr.innerHTML = `
                 <td><b>${p.number}</b></td>
                 <td>${nameHtml}</td>
-                <td class="${spikeClass}"><b>${spikeRateStr}</b><br><span style="font-size:0.7rem;">(${st.spike.success}/${spikeTotal})</span></td>
-                <td class="${serveClass}"><b>${serveEffectiveRateStr}</b><br><span style="font-size:0.7rem;">(有効:${serveEffective}/全${serveTotal})</span></td>
-                <td class="${blockClass}"><b>${st.block.success}本</b><br><span style="font-size:0.7rem;">(ワンタッチ:${st.block.continue})</span></td>
-                <td class="${recClass}"><b>${recRateStr}</b><br><span style="font-size:0.7rem;">(A.Bパス:${st.reception.success}/${recTotal})</span></td>
+                <td class="${spikeClass}"><b>${spikeRateStr}</b><br><span style="font-size:0.65rem;">(${st.spike.success}/${spikeTotal})</span></td>
+                <td class="${serveClass}"><b>${serveEffectiveRateStr}</b><br><span style="font-size:0.65rem;">(${serveEffective}/${serveTotal})</span></td>
+                <td class="${blockClass}"><b>${st.block.success}本</b><br><span style="font-size:0.65rem;">(ワン:${st.block.continue})</span></td>
+                <td class="${recClass}"><b>${recRateStr}</b><br><span style="font-size:0.65rem;">(${st.reception.success}/${recTotal})</span></td>
                 <td class="${otherErrClass}"><b>${otherErr}本</b></td>
                 <td>${editBtnHtml}</td>
             `;
