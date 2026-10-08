@@ -61,9 +61,11 @@
         .container {
             width: 100%;
             max-width: 1400px;
+            margin: 0 auto;
             display: grid;
             grid-template-columns: 1fr;
             gap: 20px;
+            box-sizing: border-box;
         }
 
         .tab-nav {
@@ -303,9 +305,21 @@
         .big-player-card .card-cond { position: absolute; top: 5px; left: 5px; font-size: 0.95rem; }
 
         .empty-card { background: #e2e8f0; border: 2px dashed #cbd5e1; color: #94a3b8; font-size: 0.8rem; font-weight: bold; }
-        .table-wrapper { max-height: none; overflow-y: visible; }
+        .table-wrapper {
+            width: 100%;
+            max-height: none;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
+        }
 
-        table { width: 100%; border-collapse: collapse; }
+        table {
+            width: 100%;
+            min-width: 600px; /* iPhoneで文字が潰れすぎるのを防止 */
+            border-collapse: collapse;
+            margin: 0 auto;
+        }
         th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
         th { background: #f1f5f9; color: #475569; position: sticky; top: 0; z-index: 2; }
         
