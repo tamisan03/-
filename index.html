@@ -10,7 +10,10 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";  
+
+// windowオブジェクトにもツールを登録
+window.authTools = { signInAnonymously, signInWithEmailAndPassword, onAuthStateChanged, signOut };
 
         const firebaseConfig = {
             apiKey: "AIzaSyDIq6jvzkx2OyvPURkzCnWYP1apqckLI00",
@@ -1315,25 +1318,26 @@
     }
 
     async function promptTeamPassword() {
-        let inputPass = prompt("【チーム専用アプリ】パスワードを入力してください:");
+    let inputPass = prompt("【チーム専用アプリ】パスワードを入力してください:");
 
-        while (inputPass !== TEAM_SHARED_PASSWORD) {
-            if (inputPass === null) {
-                document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>アクセス権限がありません。</h2>";
-                return;
-            }
-            alert("パスワードが正しくありません。");
-            inputPass = prompt("【チーム専用アプリ】パスワードを入力してください:");
-        }
+    if (inputPass === null) {
+        document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>アクセス権限がありません。</h2>";
+        return;
+    }
 
-        try {
-            const { signInAnonymously } = window.authTools;
-            await signInAnonymously(window.auth);
-            showToast("認証に成功しました");
-        } catch (error) {
-            console.error("認証エラー:", error);
-            alert("ログイン処理に失敗しました。Firebase Consoleで「匿名認証」が有効化されているかご確認ください。");
-        }
+    // 裏で固定のダミーメールアドレスを合成（コード内にはパスワードを書かない）
+    const dummyEmail = "seinan@team.local"; 
+    const { signInWithEmailAndPassword } = window.authTools;
+
+    try {
+        // Firebaseサーバーでパスワードの正誤を認証
+        await signInWithEmailAndPassword(window.auth, dummyEmail, inputPass);
+        showToast("認証に成功しました");
+    } catch (error) {
+        console.error("認証エラー:", error);
+        alert("パスワードが正しくありません。");
+        promptTeamPassword(); // 再入力ダイアログ
+    }
     }
 
     const POSITIONS = [
