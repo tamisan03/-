@@ -331,8 +331,8 @@
         .badge-sub { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
 
         .btn-group { display: flex; gap: 4px; }
-        .btn-edit { background: #0ea5e9; padding: 5px 8px; font-size: 0.75rem; color: white; border: none; border-radius: 6px; cursor: pointer; }
-        .btn-del { background: #ef4444; padding: 5px 8px; font-size: 0.75rem; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-edit { background: #0ea5e9; padding: 5px 8px; font-size: 0.75rem; color: white; border: none; border-radius: 6px; cursor: pointer; min-width: 48px; text-align: center; box-sizing: border-box; }
+        .btn-del { background: #ef4444; padding: 5px 8px; font-size: 0.75rem; color: white; border: none; border-radius: 6px; cursor: pointer; min-width: 48px; text-align: center; box-sizing: border-box; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; z-index: 1000; }
         .modal { background: white; padding: 24px; border-radius: 16px; width: 90%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -385,6 +385,10 @@
         .btn-save-match { background: #16a34a; color: white; border: none; padding: 10px 14px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; cursor: pointer; white-space: nowrap; }
 
         .selected-match-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; }
+        .history-action-btn-group { display: flex; gap: 8px; }
+        .btn-history-edit { background: #0ea5e9; color: white; border: none; padding: 8px 14px; font-size: 0.8rem; font-weight: bold; border-radius: 6px; cursor: pointer; min-width: 100px; text-align: center; box-sizing: border-box; }
+        .btn-history-del { background: #ef4444; color: white; border: none; padding: 8px 14px; font-size: 0.8rem; font-weight: bold; border-radius: 6px; cursor: pointer; min-width: 100px; text-align: center; box-sizing: border-box; }
+
         .setter-toss-badge { display: inline-block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e4ed8; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; margin-bottom: 4px; font-weight: bold; }
 
         td.cell-warn, span.setter-toss-badge.cell-warn { background-color: #fee2e2 !important; color: #991b1b !important; border-color: #fca5a5 !important; }
@@ -720,14 +724,21 @@
                 border-collapse: collapse !important;
             }
 
-            table th:nth-child(1), table td:nth-child(1) { width: 9%; text-align: center; }
-            table th:nth-child(2), table td:nth-child(2) { width: 20%; }
-            table th:nth-child(3), table td:nth-child(3) { width: 14%; text-align: center; }
-            table th:nth-child(4), table td:nth-child(4) { width: 14%; text-align: center; }
-            table th:nth-child(5), table td:nth-child(5) { width: 13%; text-align: center; }
-            table th:nth-child(6), table td:nth-child(6) { width: 14%; text-align: center; }
-            table th:nth-child(7), table td:nth-child(7) { width: 8%; text-align: center; }
-            table th:nth-child(8), table td:nth-child(8) { width: 8%; text-align: center; }
+            /* 選手一覧テーブル */
+            #player-list-table th:nth-child(1), #player-list-table td:nth-child(1) { width: 15%; text-align: center; }
+            #player-list-table th:nth-child(2), #player-list-table td:nth-child(2) { width: 35%; }
+            #player-list-table th:nth-child(3), #player-list-table td:nth-child(3) { width: 20%; text-align: center; }
+            #player-list-table th:nth-child(4), #player-list-table td:nth-child(4) { width: 30%; }
+
+            /* 過去戦績テーブル */
+            #history-player-table th:nth-child(1), #history-player-table td:nth-child(1) { width: 9%; text-align: center; }
+            #history-player-table th:nth-child(2), #history-player-table td:nth-child(2) { width: 20%; }
+            #history-player-table th:nth-child(3), #history-player-table td:nth-child(3) { width: 14%; text-align: center; }
+            #history-player-table th:nth-child(4), #history-player-table td:nth-child(4) { width: 14%; text-align: center; }
+            #history-player-table th:nth-child(5), #history-player-table td:nth-child(5) { width: 13%; text-align: center; }
+            #history-player-table th:nth-child(6), #history-player-table td:nth-child(6) { width: 14%; text-align: center; }
+            #history-player-table th:nth-child(7), #history-player-table td:nth-child(7) { width: 8%; text-align: center; }
+            #history-player-table th:nth-child(8), #history-player-table td:nth-child(8) { width: 8%; text-align: center; }
 
             table th, table td {
                 padding: 6px 1px !important;
@@ -742,10 +753,17 @@
                 margin-right: 2px !important;
             }
 
-            .btn-edit {
-                padding: 3px 2px !important;
+            .btn-edit, .btn-del {
+                padding: 4px 2px !important;
                 font-size: 0.6rem !important;
                 border-radius: 4px !important;
+                min-width: 32px !important;
+            }
+
+            .btn-history-edit, .btn-history-del {
+                padding: 6px 8px !important;
+                font-size: 0.72rem !important;
+                min-width: 80px !important;
             }
 
             .history-card-grid {
@@ -843,13 +861,12 @@
                 ※選手の名前やアイコンをタップすると、これまでの全試合を通じた通算成績データを確認できます。
             </div>
             <div class="table-wrapper">
-                <table>
+                <table id="player-list-table">
                     <thead>
                         <tr>
                             <th>背番号</th>
                             <th>名前</th>
                             <th>身長</th>
-                            <th>調子</th>
                             <th>ポジション</th>
                             <th>修正</th>
                         </tr>
@@ -975,9 +992,9 @@
             <div id="selected-match-details" style="margin-top:15px; display:none;">
                 <div class="selected-match-header-row">
                     <div id="match-meta-header" style="font-size:1rem; font-weight:bold; color:#1e293b;"></div>
-                    <div id="single-match-actions">
-                        <button class="btn-edit" style="padding:8px 14px; font-size:0.8rem; margin-right:6px;" onclick="openEditMatchNameModal()">試合名を編集</button>
-                        <button class="btn-del" style="padding:8px 14px; font-size:0.8rem;" onclick="deleteSelectedMatchData()">この試合データを削除</button>
+                    <div id="single-match-actions" class="history-action-btn-group">
+                        <button class="btn-history-edit" onclick="openEditMatchNameModal()">試合名修正</button>
+                        <button class="btn-history-del" onclick="deleteSelectedMatchData()">試合データ削除</button>
                     </div>
                 </div>
 
@@ -991,7 +1008,7 @@
                 </div>
 
                 <div class="table-wrapper">
-                    <table>
+                    <table id="history-player-table">
                         <thead>
                             <tr>
                                 <th>背番号</th>
@@ -1697,7 +1714,7 @@
         renderMatchPlayerTable(match);
 
         const actionsEl = document.getElementById('single-match-actions');
-        if (actionsEl) actionsEl.style.display = 'block';
+        if (actionsEl) actionsEl.style.display = 'flex';
 
         showToast(`「${match.name}」を表示しました`);
     }
@@ -1830,7 +1847,6 @@
             .filter(item => item.total > 0 && item.rate >= 0)
             .sort((a, b) => b.rate - a.rate || b.succ - a.succ);
 
-        // 人数制限（.slice(0,3)）を解除し、記録のある選手を全員順位付け
         function buildFullRankingListHtml(list, type) {
             if (!list || list.length === 0) {
                 return '<li class="top3-item" style="color:#94a3b8; justify-content:center;">記録なし</li>';
@@ -2093,9 +2109,9 @@
         document.getElementById('hist-block-cont').value = st.block.continue || 0;
         document.getElementById('hist-block-err').value = st.block.error || 0;
 
-        document.getElementById('hist-rec-succ').value = st.reception.success || 0;
-        document.getElementById('hist-rec-cont').value = st.reception.continue || 0;
-        document.getElementById('hist-rec-err').value = st.reception.error || 0;
+        document.getElementById('hist-rec-succ').value = st.rec.succ || st.reception.success || 0;
+        document.getElementById('hist-rec-cont').value = st.rec.cont || st.reception.continue || 0;
+        document.getElementById('hist-rec-err').value = st.rec.err || st.reception.error || 0;
 
         document.getElementById('hist-toss-err').value = st.toss.error || 0;
 
@@ -3459,7 +3475,6 @@
                 : '';
 
             const heightStr = p.height !== '-' ? `${p.height}cm` : '-';
-            const condEmoji = CONDITION_EMOJI[p.condition] || '普通';
             const photoImg = p.photo 
                 ? `<img src="${p.photo}" class="list-photo" draggable="false" onclick="openInfoModal(players.find(pl => String(pl.id) === String('${p.id}')), true)">` 
                 : '';
@@ -3471,7 +3486,6 @@
                     <span class="clickable-player-name" onclick="openInfoModal(players.find(pl => String(pl.id) === String('${p.id}')), true)">${p.name}</span>
                 </td>
                 <td>${heightStr}</td>
-                <td><span title="${p.condition || '普通'}">${condEmoji}</span></td>
                 <td>
                     <span class="badge">${p.position}</span><br>
                     ${subBadges}
