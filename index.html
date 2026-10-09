@@ -7,10 +7,37 @@
 
     <!-- Firebase SDK (v10.8.0) の初期化設定 -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signInAnonymously, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";  
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, signInAnonymously, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";  
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDIq6jvzkx2OyvPURkzCnWYP1apqckLI00",
+        authDomain: "team-seinan.firebaseapp.com",
+        projectId: "team-seinan",
+        storageBucket: "team-seinan.firebasestorage.app",
+        messagingSenderId: "891837739455",
+        appId: "1:891837739455:web:ab01474df7bc6e329d710a",
+        measurementId: "G-5SQ92WZ97C"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    window.firebaseApp = app;
+    window.firebaseAnalytics = analytics;
+    window.db = db;
+    window.auth = auth;
+    window.firestoreTools = { doc, setDoc, onSnapshot };
+    
+    // ★ここを確実に設定（signInWithEmailAndPassword を含める）
+    window.authTools = { signInAnonymously, signInWithEmailAndPassword, onAuthStateChanged, signOut };
+
+    console.log("Firebase & Firestore & Auth initialized successfully.");
+</script>
 
 // windowオブジェクトにもツールを登録
 window.authTools = { signInAnonymously, signInWithEmailAndPassword, onAuthStateChanged, signOut };
