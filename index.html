@@ -698,11 +698,11 @@
             }
 
             /* 選手一覧テーブル：画面内にジャスト収まる割合幅 */
-            #player-list-table th:nth-child(1), #player-list-table td:nth-child(1) { width: 14%; text-align: center; } /* 背番号 */
-            #player-list-table th:nth-child(2), #player-list-table td:nth-child(2) { width: 32%; } /* 名前 */
-            #player-list-table th:nth-child(3), #player-list-table td:nth-child(3) { width: 16%; text-align: center; } /* 身長 */
-            #player-list-table th:nth-child(4), #player-list-table td:nth-child(4) { width: 20%; } /* ポジション */
-            #player-list-table th:nth-child(5), #player-list-table td:nth-child(5) { width: 18%; text-align: center; } /* 操作 */
+            #player-list-table th:nth-child(1), #player-list-table td:nth-child(1) { width: 10%; text-align: center; } /* 背番号 */
+            #player-list-table th:nth-child(2), #player-list-table td:nth-child(2) { width: 15%; } /* 名前 */
+            #player-list-table th:nth-child(3), #player-list-table td:nth-child(3) { width: 10%; text-align: center; } /* 身長 */
+            #player-list-table th:nth-child(4), #player-list-table td:nth-child(4) { width: 45%; } /* ポジション */
+            #player-list-table th:nth-child(5), #player-list-table td:nth-child(5) { width: 20%; text-align: center; } /* 操作 */
 
             /* 過去戦績テーブル */
             #history-player-table th:nth-child(1), #history-player-table td:nth-child(1) { width: 9%; text-align: center; }
@@ -737,8 +737,8 @@
                 padding: 4px 1px !important;
                 font-size: 0.6rem !important;
                 border-radius: 4px !important;
-                min-width: 0 !important;
-                width: 100% !important;
+                min-width: 30 !important;
+                width: auto !important;
                 box-sizing: border-box !important;
             }
 
@@ -771,6 +771,16 @@
                 width: 100% !important;
                 max-width: 100% !important;
             }
+
+/* スマホでのカレンダー（日付入力欄）のはみ出し・ズレ防止 */
+#match-date-input {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    text-align: left !important; /* 文字を左寄せに固定 */
+    -webkit-appearance: none !important; /* iOS固有の崩れをリセット */
+}
+
         }
     </style>
 </head>
@@ -919,7 +929,7 @@
                 <div class="panel-row" style="flex-wrap: wrap; gap: 8px; margin-top: 8px;">
                     <input type="date" id="match-date-input" style="width:160px; font-size:0.85rem;">
                     <input type="text" id="match-tournament-input" placeholder="大会名（例: 春季大会）" style="width:160px; font-size:0.85rem;">
-                    <input type="text" id="match-name-input" value="対" placeholder="対戦カード（例: 対長田戦）" style="flex:1; min-width:160px; font-size:0.85rem;">
+                    <input type="text" id="match-name-input" value="対" placeholder="対戦カード（例: 対長田戦）" style="flex:1; font-size:0.85rem;">
                     
                     <button class="btn-save-match" onclick="saveMatchData()">保存</button>
                     <button class="btn-reset-stats" onclick="resetCurrentStats()">リセット</button>
