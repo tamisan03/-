@@ -774,13 +774,29 @@
 
         /* スマホでのカレンダー（日付入力欄）のはみ出し・ズレ防止 */
           #match-date-input {
-            width: 100% !important;
-            max-width: 100% !important;
-            box-sizing: border-box !important;
-            text-align: left !important; /* 文字を左寄せに固定 */
-            -webkit-appearance: none !important; /* iOS固有の崩れをリセット */
+              width: 100% !important;
+              max-width: 100% !important;
+              box-sizing: border-box !important;
+              text-align: left !important; /* 文字を左寄せに固定 */
+              -webkit-appearance: none !important; /* iOS固有の崩れをリセット */
           }
 
+        }
+
+        #edit-issue-desc {
+    	    min-height: 80px; /* 最小の高さ */
+    	    max-height: 350px; /* 必要に応じて最大の高さを指定（スクロール化） */
+            height: auto;
+    	    /*overflow-y: hidden; /* スクールバーを隠して自然に伸縮させる */*/
+    	    box-sizing: border-box;
+	}
+
+        /* 新規登録用（スクロール非表示で文字量に合わせてそのまま下に伸びる） */
+        #issue-desc-input {
+            min-height: 80px;
+    	    overflow: hidden; /* スクロールバーを完全に隠す */
+    	    resize: none;     /* 手動リサイズハンドルも非表示にしたい場合 */
+    	    box-sizing: border-box;
         }
     </style>
 </head>
@@ -1051,7 +1067,7 @@
                     </div>
                     <div class="form-group">
                         <label>課題の詳細・具体的な練習対策</label>
-                        <textarea id="issue-desc-input" placeholder="例: レセプション乱れ時のレフトへのバックトス・ハイトス練習を中心に行う"></textarea>
+                        <textarea id="issue-desc-input" rows="5" placeholder="例: レセプション乱れ時のレフトへのバックトス・ハイトス練習を中心に行う"></textarea>
                     </div>
                     <button class="action-btn" onclick="addIssue()">課題を追加する</button>
 
@@ -2317,19 +2333,49 @@
     }
 
     function openEditIssueModal(issueId) {
-        const issue = teamIssues.find(i => String(i.id) === String(issueId));
-        if (!issue) return;
+    	const issue = teamIssues.find(i => String(i.id) === String(issueId));
+   	if (!issue) return;
 
-        document.getElementById('edit-issue-id').value = issue.id;
-        document.getElementById('edit-issue-title').value = issue.title || '';
-        document.getElementById('edit-issue-category').value = issue.category || 'スパイク';
+  	document.getElementById('edit-issue-id').value = issue.id;
+    	document.getElementById('edit-issue-title').value = issue.title || '';
+  	document.getElementById('edit-issue-category').value = issue.category || 'スパイク';
         document.getElementById('edit-issue-priority').value = issue.priority || 'mid';
-        
-        const descEl = document.getElementById('edit-issue-desc');
-        descEl.value = issue.desc || '';
+    
+    	const descEl = document.getElementById('edit-issue-desc');
+    	descEl.value = issue.desc || '';
 
-        document.getElementById('edit-issue-modal').style.display = 'flex';
+    	// ★ 自動高さ調整を呼び出す（入力されている文字量に合わせる）
+    	adjustTextareaHeight(descEl);
+
+    	document.getElementById('edit-issue-modal').style.display = 'flex';
+
+        // ★2. 画面に描画された直後に高さ調整を実行（10ミリ秒遅らせることで正確に取得）
+        setTimeout(() => {
+            adjustTextareaHeight(descEl);
+        }, 10);
     }
+
+    // テキストエリアの高さを文字量に合わせて自動調整する関数
+    function adjustTextareaHeight(el) {
+    	if (!el) return;
+    	el.style.height = 'auto'; // 一旦リセット
+    	// 0以外の正しく取得できた高さ（scrollHeight）を適用
+    	if (el.scrollHeight > 0) {
+            el.style.height = el.scrollHeight + 'px';
+        }
+    }
+
+    // ページ読み込み時に入力イベント（キー入力時にも連動）を登録
+    document.addEventListener('DOMContentLoaded', () => {
+    	const editDesc = document.getElementById('edit-issue-desc');
+    	const newDesc = document.getElementById('issue-desc-input');
+
+    	[editDesc, newDesc].forEach(el => {
+        	if (el) {
+            	el.addEventListener('input', () => adjustTextareaHeight(el));
+        	}
+    	});
+    });
 
     function updateIssue() {
         const id = document.getElementById('edit-issue-id').value;
