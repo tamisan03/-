@@ -306,13 +306,10 @@
 
         .empty-card { background: #e2e8f0; border: 2px dashed #cbd5e1; color: #94a3b8; font-size: 0.8rem; font-weight: bold; }
 
-        /* テーブルラッパー：縦スクロールを廃止し全選手を一括表示 */
         .table-wrapper {
             width: 100%;
             max-height: none;
-            overflow-x: auto;
-            overflow-y: visible;
-            -webkit-overflow-scrolling: touch;
+            overflow-x: hidden;
             box-sizing: border-box;
         }
 
@@ -331,8 +328,8 @@
         .badge-sub { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
 
         .btn-group { display: flex; gap: 4px; }
-        .btn-edit { background: #0ea5e9; padding: 5px 8px; font-size: 0.75rem; color: white; border: none; border-radius: 6px; cursor: pointer; min-width: 48px; text-align: center; box-sizing: border-box; }
-        .btn-del { background: #ef4444; padding: 5px 8px; font-size: 0.75rem; color: white; border: none; border-radius: 6px; cursor: pointer; min-width: 48px; text-align: center; box-sizing: border-box; }
+        .btn-edit { background: #0ea5e9; padding: 5px 6px; font-size: 0.75rem; color: white; border: none; border-radius: 6px; cursor: pointer; min-width: 40px; text-align: center; box-sizing: border-box; }
+        .btn-del { background: #ef4444; padding: 5px 6px; font-size: 0.75rem; color: white; border: none; border-radius: 6px; cursor: pointer; min-width: 40px; text-align: center; box-sizing: border-box; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; z-index: 1000; }
         .modal { background: white; padding: 24px; border-radius: 16px; width: 90%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -683,52 +680,29 @@
         .status-wip { background: #fef3c7; color: #92400e; }
         .status-done { background: #dcfce7; color: #166534; }
 
-        /* --- スマホ縦画面（画面幅767px以下）専用：横スクロール完全廃止・画面内ジャスト収まりCSS --- */
+        /* --- スマホ縦画面（画面幅767px以下）専用CSS：横スクロール完全禁止 --- */
         @media (max-width: 767px) {
-            html, body {
+            html, body, .container, .card, .table-wrapper {
                 width: 100% !important;
                 max-width: 100% !important;
                 overflow-x: hidden !important;
+                box-sizing: border-box !important;
                 padding: 6px !important;
-                box-sizing: border-box !important;
-            }
-
-            .container {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: 0 auto !important;
-                padding: 0 !important;
-                box-sizing: border-box !important;
-            }
-
-            .card, .match-data-panel, .team-summary-box, .top3-section-box {
-                width: 100% !important;
-                max-width: 100% !important;
-                box-sizing: border-box !important;
-                padding: 8px !important;
-            }
-
-            .table-wrapper {
-                width: 100% !important;
-                max-width: 100% !important;
-                overflow-x: hidden !important;
-                overflow-y: visible !important;
-                box-sizing: border-box !important;
-                margin: 0 auto !important;
             }
 
             table {
                 width: 100% !important;
-                min-width: 0 !important;
+                max-width: 100% !important;
                 table-layout: fixed !important;
                 border-collapse: collapse !important;
             }
 
-            /* 選手一覧テーブル */
-            #player-list-table th:nth-child(1), #player-list-table td:nth-child(1) { width: 15%; text-align: center; }
-            #player-list-table th:nth-child(2), #player-list-table td:nth-child(2) { width: 35%; }
-            #player-list-table th:nth-child(3), #player-list-table td:nth-child(3) { width: 20%; text-align: center; }
-            #player-list-table th:nth-child(4), #player-list-table td:nth-child(4) { width: 30%; }
+            /* 選手一覧テーブル：画面内にジャスト収まる割合幅 */
+            #player-list-table th:nth-child(1), #player-list-table td:nth-child(1) { width: 14%; text-align: center; } /* 背番号 */
+            #player-list-table th:nth-child(2), #player-list-table td:nth-child(2) { width: 32%; } /* 名前 */
+            #player-list-table th:nth-child(3), #player-list-table td:nth-child(3) { width: 16%; text-align: center; } /* 身長 */
+            #player-list-table th:nth-child(4), #player-list-table td:nth-child(4) { width: 20%; } /* ポジション */
+            #player-list-table th:nth-child(5), #player-list-table td:nth-child(5) { width: 18%; text-align: center; } /* 操作 */
 
             /* 過去戦績テーブル */
             #history-player-table th:nth-child(1), #history-player-table td:nth-child(1) { width: 9%; text-align: center; }
@@ -748,16 +722,24 @@
             }
 
             .list-photo {
-                width: 20px !important;
-                height: 20px !important;
+                width: 18px !important;
+                height: 18px !important;
                 margin-right: 2px !important;
             }
 
+            .btn-group {
+                display: flex !important;
+                gap: 2px !important;
+                justify-content: center !important;
+            }
+
             .btn-edit, .btn-del {
-                padding: 4px 2px !important;
+                padding: 4px 1px !important;
                 font-size: 0.6rem !important;
                 border-radius: 4px !important;
-                min-width: 32px !important;
+                min-width: 0 !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
             }
 
             .btn-history-edit, .btn-history-del {
@@ -2109,9 +2091,9 @@
         document.getElementById('hist-block-cont').value = st.block.continue || 0;
         document.getElementById('hist-block-err').value = st.block.error || 0;
 
-        document.getElementById('hist-rec-succ').value = st.rec.succ || st.reception.success || 0;
-        document.getElementById('hist-rec-cont').value = st.rec.cont || st.reception.continue || 0;
-        document.getElementById('hist-rec-err').value = st.rec.err || st.reception.error || 0;
+        document.getElementById('hist-rec-succ').value = st.reception ? st.reception.success : (st.rec ? st.rec.succ : 0);
+        document.getElementById('hist-rec-cont').value = st.reception ? st.reception.continue : (st.rec ? st.rec.cont : 0);
+        document.getElementById('hist-rec-err').value = st.reception ? st.reception.error : (st.rec ? st.rec.err : 0);
 
         document.getElementById('hist-toss-err').value = st.toss.error || 0;
 
