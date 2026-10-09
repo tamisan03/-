@@ -918,7 +918,7 @@
             <div class="match-data-panel">
                 <label style="color:#1e293b; font-size:0.9rem; font-weight:bold;">現在の記録データを保存・リセット</label>
                 <div class="panel-row" style="flex-wrap: wrap; gap: 8px; margin-top: 8px;">
-                    <input type="date" id="match-date-input" style="width:160px; font-size:0.85rem;">
+                    <input type="date" id="match-date-input" style="width:100%; font-size:0.85rem;">
                     <input type="text" id="match-tournament-input" placeholder="大会名（例: 春季大会）" style="width:160px; font-size:0.85rem;">
                     <input type="text" id="match-name-input" value="対" placeholder="対戦カード（例: 対長田戦）" style="flex:1; min-width:160px; font-size:0.85rem;">
                     
@@ -1786,6 +1786,7 @@
             }
         });
 
+        // スパイク決定率ランキング（セッター除外・全件表示）
         const spikeList = targetPlayersData
             .filter(p => !setterPlayerIds.has(String(p.id)))
             .map(p => {
@@ -1797,6 +1798,7 @@
             .filter(item => item.total > 0 && item.rate >= 0)
             .sort((a, b) => b.rate - a.rate || b.succ - a.succ);
 
+        // 有効サーブ率ランキング（全件表示）
         const serveList = targetPlayersData
             .map(p => {
                 const st = p.stats || initStatsObj();
@@ -1808,6 +1810,7 @@
             .filter(item => item.total > 0 && item.rate >= 0)
             .sort((a, b) => b.rate - a.rate || b.effective - a.effective);
 
+        // ブロック得点数ランキング（全件表示）
         const blockList = targetPlayersData
             .map(p => {
                 const st = p.stats || initStatsObj();
@@ -1816,6 +1819,7 @@
             .filter(item => item.count > 0)
             .sort((a, b) => b.count - a.count);
 
+        // レセプションA.Bパス率ランキング（全件表示）
         const recList = targetPlayersData
             .map(p => {
                 const st = p.stats || initStatsObj();
@@ -1826,14 +1830,14 @@
             .filter(item => item.total > 0 && item.rate >= 0)
             .sort((a, b) => b.rate - a.rate || b.succ - a.succ);
 
-        function buildTop3ListHtml(list, type) {
+        // 人数制限（.slice(0,3)）を解除し、記録のある選手を全員順位付け
+        function buildFullRankingListHtml(list, type) {
             if (!list || list.length === 0) {
                 return '<li class="top3-item" style="color:#94a3b8; justify-content:center;">記録なし</li>';
             }
-            const top3 = list.slice(0, 3);
             let html = '';
-            top3.forEach((item, idx) => {
-                const rankClass = `rank-${idx + 1}`;
+            list.forEach((item, idx) => {
+                const rankClass = idx < 3 ? `rank-${idx + 1}` : '';
                 let valStr = '';
                 if (type === 'rate') {
                     valStr = `${item.rate.toFixed(1)}% <span style="font-size:0.65rem; color:#64748b;">(${item.succ}/${item.total})</span>`;
@@ -1854,23 +1858,23 @@
         }
 
         container.innerHTML = `
-            <div class="top3-section-title">この試合の部門別トップ3</div>
+            <div class="top3-section-title">部門別ランキング（全員）</div>
             <div class="top3-grid">
                 <div class="top3-card">
                     <div class="top3-card-header">スパイク決定率</div>
-                    <ul class="top3-list">${buildTop3ListHtml(spikeList, 'rate')}</ul>
+                    <ul class="top3-list">${buildFullRankingListHtml(spikeList, 'rate')}</ul>
                 </div>
                 <div class="top3-card">
                     <div class="top3-card-header">有効サーブ率</div>
-                    <ul class="top3-list">${buildTop3ListHtml(serveList, 'serveRate')}</ul>
+                    <ul class="top3-list">${buildFullRankingListHtml(serveList, 'serveRate')}</ul>
                 </div>
                 <div class="top3-card">
                     <div class="top3-card-header">ブロック得点数</div>
-                    <ul class="top3-list">${buildTop3ListHtml(blockList, 'count')}</ul>
+                    <ul class="top3-list">${buildFullRankingListHtml(blockList, 'count')}</ul>
                 </div>
                 <div class="top3-card">
                     <div class="top3-card-header">レセプションA.Bパス率</div>
-                    <ul class="top3-list">${buildTop3ListHtml(recList, 'rate')}</ul>
+                    <ul class="top3-list">${buildFullRankingListHtml(recList, 'rate')}</ul>
                 </div>
             </div>
         `;
@@ -1890,15 +1894,18 @@
 
         const matchStarters = match.flickStarters || [];
 
-        const activeStarterSet = new Set(
-            matchStarters
-                .filter(id => id !== undefined && id !== null && String(id).trim() !== "")
-                .map(id => String(id))
-        );
-
-        const activePlayersData = (activeStarterSet.size > 0)
-            ? match.playersData.filter(p => activeStarterSet.has(String(p.id)))
-            : match.playersData;
+        // 合算データ（match.isCombined）の場合はフィルタリングせず全選手を表示
+        let activePlayersData = match.playersData;
+        if (!match.isCombined) {
+            const activeStarterSet = new Set(
+                matchStarters
+                    .filter(id => id !== undefined && id !== null && String(id).trim() !== "")
+                    .map(id => String(id))
+            );
+            if (activeStarterSet.size > 0) {
+                activePlayersData = match.playersData.filter(p => activeStarterSet.has(String(p.id)));
+            }
+        }
 
         renderTeamSummary(match.playersData, 'history-team-summary', '📊 チーム全体スタッツ（この試合）');
         renderMatchTop3(match.playersData, matchStarters, 'history-top3-summary');
