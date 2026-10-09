@@ -1322,18 +1322,23 @@ window.authTools = { signInAnonymously, signInWithEmailAndPassword, onAuthStateC
             return;
         }
 
+        // 前後の空白文字を除去
+        const cleanedPass = inputPass.trim();
+
+        // 裏で固定のダミーメールアドレスを合成
         const dummyEmail = "seinan@team.local"; 
         const { signInWithEmailAndPassword } = window.authTools;
 
         try {
             // Firebaseでパスワード認証を実行
-            await signInWithEmailAndPassword(window.auth, dummyEmail, inputPass);
+            await signInWithEmailAndPassword(window.auth, dummyEmail, cleanedPass);
             showToast("認証に成功しました");
             setupFirestoreSync();
             render();
         } catch (error) {
-            console.error("認証エラー:", error);
-            alert("パスワードが正しくありません。");
+            console.error("認証エラー詳細:", error);
+            // エラーコードを画面のアラートに出力して原因を特定しやすくする
+            alert(`ログインに失敗しました。\n理由: ${error.code}\n(${error.message})`);
             promptTeamPassword(); // 再入力ダイアログ
         }
     }
