@@ -1297,7 +1297,6 @@ window.authTools = { signInAnonymously, signInWithEmailAndPassword, onAuthStateC
 </div>
 
 <script>
-    const TEAM_SHARED_PASSWORD = "seinan2026";
 
     function initAppAuth() {
         if (!window.auth || !window.authTools) {
@@ -1305,39 +1304,38 @@ window.authTools = { signInAnonymously, signInWithEmailAndPassword, onAuthStateC
             return;
         }
 
-        const { onAuthStateChanged } = window.authTools;
+        const { onAuthStateChanged, signOut } = window.authTools;
 
-        onAuthStateChanged(window.auth, (user) => {
-            if (user) {
-                setupFirestoreSync();
-                render();
-            } else {
-                promptTeamPassword();
-            }
+        // ★一度ログアウト（セッションリセット）を行ってから認証チェックに入る
+        signOut(window.auth).then(() => {
+            promptTeamPassword();
+        }).catch(() => {
+            promptTeamPassword();
         });
     }
 
     async function promptTeamPassword() {
-    let inputPass = prompt("【チーム専用アプリ】パスワードを入力してください:");
+        let inputPass = prompt("【チーム専用アプリ】パスワードを入力してください:");
 
-    if (inputPass === null) {
-        document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>アクセス権限がありません。</h2>";
-        return;
-    }
+        if (inputPass === null) {
+            document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>アクセス権限がありません。ページを再読み込みしてください。</h2>";
+            return;
+        }
 
-    // 裏で固定のダミーメールアドレスを合成（コード内にはパスワードを書かない）
-    const dummyEmail = "seinan@team.local"; 
-    const { signInWithEmailAndPassword } = window.authTools;
+        const dummyEmail = "seinan@team.local"; 
+        const { signInWithEmailAndPassword } = window.authTools;
 
-    try {
-        // Firebaseサーバーでパスワードの正誤を認証
-        await signInWithEmailAndPassword(window.auth, dummyEmail, inputPass);
-        showToast("認証に成功しました");
-    } catch (error) {
-        console.error("認証エラー:", error);
-        alert("パスワードが正しくありません。");
-        promptTeamPassword(); // 再入力ダイアログ
-    }
+        try {
+            // Firebaseでパスワード認証を実行
+            await signInWithEmailAndPassword(window.auth, dummyEmail, inputPass);
+            showToast("認証に成功しました");
+            setupFirestoreSync();
+            render();
+        } catch (error) {
+            console.error("認証エラー:", error);
+            alert("パスワードが正しくありません。");
+            promptTeamPassword(); // 再入力ダイアログ
+        }
     }
 
     const POSITIONS = [
