@@ -744,6 +744,11 @@
                 border-collapse: collapse !important;
             }
 
+#player-list-table tbody tr,
+    #history-player-table tbody tr {
+        height: 55px !important; /* スマホ向け固定高さ */
+    }
+
             #player-list-table th:nth-child(1), #player-list-table td:nth-child(1) { width: 10%; text-align: center; }
             #player-list-table th:nth-child(2), #player-list-table td:nth-child(2) { width: 15%; }
             #player-list-table th:nth-child(3), #player-list-table td:nth-child(3) { width: 13%; text-align: center; }
@@ -839,6 +844,13 @@
             resize: none;
             box-sizing: border-box;
         }
+
+/* 一般ユーザーモードの時、すべての削除ボタン・削除アクションを非表示 */
+body.user-mode .btn-del,
+body.user-mode .btn-history-del,
+body.user-mode .reset-photo-btn {
+    display: none !important;
+}
     </style>
 </head>
 <body>
@@ -1667,33 +1679,40 @@ function switchTab(tabId) {
     }
 
 function applyRolePermissions() {
-        const storedAdmin = localStorage.getItem('vball9_is_admin');
-        if (storedAdmin !== null) {
-            isAdmin = JSON.parse(storedAdmin);
-        }
-
-        const registerTabBtn = document.querySelector(".tab-btn[onclick*='tab-register']");
-        const flickTabBtn = document.querySelector(".tab-btn[onclick*='tab-flick']");
-        const financeTabBtn = document.querySelector(".tab-btn[onclick*='tab-finance']"); // 収支タブボタン
-
-        if (!isAdmin) {
-            // 一般ユーザー：選手登録・記録・収支タブのボタンを非表示
-            if (registerTabBtn) registerTabBtn.style.display = 'none';
-            if (flickTabBtn) flickTabBtn.style.display = 'none';
-            if (financeTabBtn) financeTabBtn.style.display = 'none'; // 収支タブ非表示
-
-            // 制限対象のタブが開いている場合は「選手一覧」に切り替え
-            const activeTab = document.querySelector('.tab-card.active');
-            if (!activeTab || activeTab.id === 'tab-register' || activeTab.id === 'tab-flick' || activeTab.id === 'tab-finance') {
-                switchTab('tab-list');
-            }
-        } else {
-            // 管理者：全タブ表示
-            if (registerTabBtn) registerTabBtn.style.display = 'inline-block';
-            if (flickTabBtn) flickTabBtn.style.display = 'inline-block';
-            if (financeTabBtn) financeTabBtn.style.display = 'inline-block'; // 収支タブ表示
-        }
+    const storedAdmin = localStorage.getItem('vball9_is_admin');
+    if (storedAdmin !== null) {
+        isAdmin = JSON.parse(storedAdmin);
     }
+
+    // 一般ユーザーモードの判定用クラスをbodyに付与/解除
+    if (!isAdmin) {
+        document.body.classList.add('user-mode');
+    } else {
+        document.body.classList.remove('user-mode');
+    }
+
+    const registerTabBtn = document.querySelector(".tab-btn[onclick*='tab-register']");
+    const flickTabBtn = document.querySelector(".tab-btn[onclick*='tab-flick']");
+    const financeTabBtn = document.querySelector(".tab-btn[onclick*='tab-finance']");
+
+    if (!isAdmin) {
+        // 一般ユーザー：選手登録・記録・収支タブのボタンを非表示
+        if (registerTabBtn) registerTabBtn.style.display = 'none';
+        if (flickTabBtn) flickTabBtn.style.display = 'none';
+        if (financeTabBtn) financeTabBtn.style.display = 'none';
+
+        // 制限対象のタブが開いている場合は「選手一覧」に切り替え
+        const activeTab = document.querySelector('.tab-card.active');
+        if (!activeTab || activeTab.id === 'tab-register' || activeTab.id === 'tab-flick' || activeTab.id === 'tab-finance') {
+            switchTab('tab-list');
+        }
+    } else {
+        // 管理者：全タブ表示
+        if (registerTabBtn) registerTabBtn.style.display = 'inline-block';
+        if (flickTabBtn) flickTabBtn.style.display = 'inline-block';
+        if (financeTabBtn) financeTabBtn.style.display = 'inline-block';
+    }
+}
 
     function initStatsObj() {
         return {
