@@ -669,7 +669,8 @@
                 grid-template-columns: 360px 1fr;
             }
         }
-        .issue-card {
+
+	.issue-card {
             background: #ffffff;
             border: 1px solid var(--border);
             border-radius: 12px;
@@ -678,8 +679,8 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.03);
             position: relative;
         }
-        .issue-card.priority-high { border-left: 5px solid #ef4444; }
-        .issue-card.priority-mid { border-left: 5px solid #f59e0b; }
+        .issue-card.priority-high { border-left: 5px solid #10b981; }
+        .issue-card.priority-mid { border-left: 5px solid #10b981; }
         .issue-card.priority-low { border-left: 5px solid #10b981; }
         
         .issue-header {
@@ -1144,7 +1145,7 @@ body.user-mode .reset-photo-btn {
                     </div>
                     <div class="form-group">
                         <label>課題の詳細・具体的な練習対策</label>
-                        <textarea id="issue-desc-input" rows="5" placeholder="例: レセプション乱れ時のレフトへのバックトス・ハイトス練習を中心に行う"></textarea>
+                        <textarea id="issue-desc-input" rows="5" placeholder="例: レセプション乱れ時のレフトへの2段トス練習を中心に行う"></textarea>
                     </div>
                     <button class="action-btn" onclick="addIssue()">課題を追加する</button>
 
@@ -1187,8 +1188,7 @@ body.user-mode .reset-photo-btn {
                             <option value="体育館利用料">体育館利用料</option>
                             <option value="用具購入費">用具購入費</option>
                             <option value="大会参加費">大会参加費</option>
-                            <option value="遠征費">遠征費</option>
-                            <option value="懇親会・その他">懇親会・その他</option>
+                            <option value="親睦会・その他">親睦会・その他</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -1199,7 +1199,7 @@ body.user-mode .reset-photo-btn {
                         <label>摘要・メモ</label>
                         <input type="text" id="finance-title-input" placeholder="例: 10月度市民体育館使用料">
                     </div>
-                    <button class="action-btn" onclick="addFinanceRecord()">収支データを追加・自動振分</button>
+                    <button class="action-btn" onclick="addFinanceRecord()">収支データを追加</button>
                 </div>
 
                 <!-- 年度ファイル一覧＆詳細エリア -->
@@ -2698,7 +2698,15 @@ function applyRolePermissions() {
         if (teamIssues.length === 0) {
             container.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:30px; font-weight:bold;">現在登録されている課題はありません</div>';
         } else {
-            teamIssues.forEach(issue => {
+            // 優先度の重み付け（high: 1, mid: 2, low: 3）で並び替え
+            const priorityWeight = { 'high': 1, 'mid': 2, 'low': 3 };
+            const sortedIssues = [...teamIssues].sort((a, b) => {
+                const wA = priorityWeight[a.priority] || 2;
+                const wB = priorityWeight[b.priority] || 2;
+                return wA - wB;
+            });
+
+            sortedIssues.forEach(issue => {
                 const card = document.createElement('div');
                 card.className = `issue-card priority-${issue.priority}`;
                 
