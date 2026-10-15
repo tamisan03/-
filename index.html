@@ -962,9 +962,24 @@ body.user-mode .reset-photo-btn {
             </div>
         </div>
 
-        <!-- タブ3：作戦ボード -->
+　　　　<!-- タブ3：作戦ボード -->
         <div class="card tab-card" id="tab-court">
             <h2>作戦ボード</h2>
+
+            <!-- ★ここに保存・呼び出しの入力エリアを追加します★ -->
+            <div style="background: #f1f5f9; padding: 12px; border-radius: 10px; margin-bottom: 14px; border: 1px solid #cbd5e1;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px;">
+                    <select id="tactics-select" onchange="loadTacticsPosition()" style="flex: 1; min-width: 180px;">
+                        <option value="">-- 保存したフォーメーションを選択 --</option>
+                    </select>
+                    <button class="btn-del" onclick="deleteTacticsPosition()" style="width: auto; padding: 10px 14px; min-width: unset;">削除</button>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                    <input type="text" id="tactics-name-input" placeholder="フォーメーション名（例: Aクイックシフト）" style="flex: 1; min-width: 180px;">
+                    <button class="btn-save-match" onclick="saveTacticsPosition()" style="white-space: nowrap;">配置を保存</button>
+                </div>
+            </div>
+
             <div class="ipad-grid-layout">
                 <div>
                     <h3 style="font-size:1rem; margin-top:0; margin-bottom:8px;">スタメン選出 (9人)</h3>
@@ -1566,6 +1581,7 @@ const ADMIN_PASSWORD = "seinan2026_admin"; // 管理者用パスワード[cite: 
     let starters = JSON.parse(localStorage.getItem('vball9_starters')) || Array(9).fill("");
     let pinPositions = JSON.parse(localStorage.getItem('vball9_pin_positions')) || DEFAULT_POSITIONS;
     let ballPosition = JSON.parse(localStorage.getItem('vball9_ball_position')) || { x: 50, y: 50 };
+    let savedTactics = JSON.parse(localStorage.getItem('vball9_saved_tactics')) || []; //
 
     let flickStarters = JSON.parse(localStorage.getItem('vball9_flick_starters')) || Array(9).fill("");
     let savedMatches = JSON.parse(localStorage.getItem('vball9_saved_matches')) || [];
@@ -1617,6 +1633,7 @@ function switchTab(tabId) {
         localStorage.setItem('vball9_saved_matches', JSON.stringify(savedMatches));
         localStorage.setItem('vball9_team_issues', JSON.stringify(teamIssues));
         localStorage.setItem('vball9_team_finances', JSON.stringify(teamFinances));
+        localStorage.setItem('vball9_saved_tactics', JSON.stringify(savedTactics));
 
         if (isRemoteUpdate) return;
 
@@ -1632,6 +1649,7 @@ function switchTab(tabId) {
                     savedMatches: savedMatches,
                     teamIssues: teamIssues,
                     teamFinances: teamFinances,
+                    savedTactics: savedTactics,
                     updatedAt: new Date().toISOString()
                 });
                 console.log("Firestoreへの同期完了");
@@ -1667,6 +1685,7 @@ function switchTab(tabId) {
                 if (data.savedMatches) savedMatches = data.savedMatches;
                 if (data.teamIssues) teamIssues = data.teamIssues;
                 if (data.teamFinances) teamFinances = data.teamFinances;
+                if (data.savedTactics) savedTactics = data.savedTactics;
 
                 render();
                 
@@ -3540,6 +3559,116 @@ function applyRolePermissions() {
         });
     }
 
+// --- 戦術フォーメーション保存・読込処理 ---
+
+    // セレクトボックスの選択肢更新
+    function renderTacticsSelect() {
+        const selectEl = document.getElementById('tactics-select');
+        if (!selectEl) return;
+
+        let html = '<option value="">-- 保存したフォーメーションを選択 --</option>';
+        savedTactics.forEach(t => {
+            html += `<option value="${t.id}">${t.name}</option>`;
+        });
+        selectEl.innerHTML = html;
+    }
+
+// 現在の配置（座標）を戦術として保存（選択中は上書き／未選択は新規保存）
+    function saveTacticsPosition() {
+        const selectEl = document.getElementById('tactics-select');
+        const nameInput = document.getElementById('tactics-name-input');
+        const selectedId = selectEl ? selectEl.value : '';
+        const name = nameInput ? nameInput.value.trim() : '';
+
+        // リスト選択中の場合は「上書き保存」
+        if (selectedId) {
+            const tactics = savedTactics.find(t => String(t.id) === String(selectedId));
+            if (tactics) {
+                // 入力欄に名前があれば名前も更新、空欄なら元の名前を維持
+                if (name) tactics.name = name;
+                tactics.pinPositions = JSON.parse(JSON.stringify(pinPositions));
+                tactics.ballPosition = JSON.parse(JSON.stringify(ballPosition));
+
+                saveStorage();
+                renderTacticsSelect();
+                selectEl.value = selectedId; // 選択状態を維持
+                nameInput.value = '';
+                showToast(`戦術「${tactics.name}」を上書き保存しました`);
+                return;
+            }
+        }
+
+        // 未選択の場合は「新規保存」
+        if (!name) {
+            alert('フォーメーション名を入力してください（例: Cクイックシフト）。');
+            return;
+        }
+
+        const newTactics = {
+            id: String(Date.now()),
+            name: name,
+            pinPositions: JSON.parse(JSON.stringify(pinPositions)),
+            ballPosition: JSON.parse(JSON.stringify(ballPosition))
+        };
+
+        savedTactics.push(newTactics);
+        saveStorage();
+        renderTacticsSelect();
+
+        // 保存した新規フォーメーションを選択状態にする
+        if (selectEl) selectEl.value = newTactics.id;
+        nameInput.value = '';
+        showToast(`新戦術「${name}」として保存しました`);
+    }
+
+    // セレクトボックスで選択したフォーメーションを呼び出してコート上に復元
+    function loadTacticsPosition() {
+        const selectEl = document.getElementById('tactics-select');
+        const nameInput = document.getElementById('tactics-name-input');
+        if (!selectEl) return;
+
+        const targetId = selectEl.value;
+        if (!targetId) {
+            if (nameInput) nameInput.value = '';
+            return;
+        }
+
+        const tactics = savedTactics.find(t => String(t.id) === String(targetId));
+
+        if (tactics) {
+            pinPositions = JSON.parse(JSON.stringify(tactics.pinPositions));
+            if (tactics.ballPosition) {
+                ballPosition = JSON.parse(JSON.stringify(tactics.ballPosition));
+            }
+            // 呼び出し時に名前入力欄にフォーメーション名を自動セット（変更・上書きしやすくするため）
+            if (nameInput) nameInput.value = tactics.name;
+
+            saveStorage();
+            renderCourt();
+            showToast(`フォーメーション「${tactics.name}」を呼び出しました`);
+        }
+    }
+
+    // 選択中のフォーメーションを削除
+    function deleteTacticsPosition() {
+        const selectEl = document.getElementById('tactics-select');
+        if (!selectEl || !selectEl.value) {
+            alert('削除するフォーメーションを選択してください。');
+            return;
+        }
+
+        const targetId = selectEl.value;
+        const tactics = savedTactics.find(t => String(t.id) === String(targetId));
+        if (!tactics) return;
+
+        if (!confirm(`フォーメーション「${tactics.name}」を削除しますか？`)) return;
+
+        savedTactics = savedTactics.filter(t => String(t.id) !== String(targetId));
+        saveStorage();
+        renderTacticsSelect();
+        showToast('フォーメーションを削除しました');
+    }
+
     function renderFlickCourt() {
         const frontContainer = document.getElementById('flick-front-cards');
         const backContainer = document.getElementById('flick-back-cards');
@@ -3980,6 +4109,7 @@ function applyRolePermissions() {
         renderStartersUI();
         renderFlickStartersUI();
         renderCourt();
+        renderTacticsSelect();
         renderSavedMatchesSelect();
         renderTeamSummary(players, 'current-team-summary', '📊 チーム全体スタッツ（現在の試合）');
         initMatchInputDefaults();
