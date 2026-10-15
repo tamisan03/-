@@ -1045,7 +1045,27 @@ body.user-mode .reset-photo-btn {
                 </div>
             </div>
 
+            <!-- 全体スタッツ -->
             <div id="current-team-summary" class="team-summary-box"></div>
+
+<!-- 自チーム失点記録ボタン（白背景・枠と文字のみ着色） -->
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 0.85rem; font-weight: bold; color: #9f1239; margin-bottom: 6px;">🔻 自チーム失点記録</div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                    <button type="button" onclick="recordLostPoint('opponentSpike')" style="background: #ffffff; color: #e11d48; border: 2px solid #e11d48; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.78rem; text-align: center;">
+                        スパイク(強)<br><span id="count-lost-spike" style="font-size:1.1rem; font-weight:800;">0</span>本
+                    </button>
+                    <button type="button" onclick="recordLostPoint('opponentFeint')" style="background: #ffffff; color: #d97706; border: 2px solid #f59e0b; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.78rem; text-align: center;">
+                        スパイク(緩)<br><span id="count-lost-feint" style="font-size:1.1rem; font-weight:800;">0</span>本
+                    </button>
+                    <button type="button" onclick="recordLostPoint('opponentServe')" style="background: #ffffff; color: #0284c7; border: 2px solid #0284c7; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.78rem; text-align: center;">
+                        レセプション<br><span id="count-lost-serve" style="font-size:1.1rem; font-weight:800;">0</span>本
+                    </button>
+                    <button type="button" onclick="recordLostPoint('selfError')" style="background: #ffffff; color: #475569; border: 2px solid #64748b; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.78rem; text-align: center;">
+                        自滅<br><span id="count-lost-self" style="font-size:1.1rem; font-weight:800;">0</span>本
+                    </button>
+                </div>
+            </div>
 
             <div style="font-size:0.8rem; color:#64748b; margin-bottom:12px;">
                 ※選手ボタン上でフリック ➔ <b>上</b>: スパイク / <b>左</b>: ブロック / <b>右</b>: レセプション (※セッターはトスミス) / <b>下</b>: サーブ<br>
@@ -1076,6 +1096,7 @@ body.user-mode .reset-photo-btn {
 
             <h3 style="font-size:0.9rem; margin-top:10px; margin-bottom:6px; color:#334155;">【後衛 3人】（左から：レフトバック、センターバック、ライトバック）</h3>
             <div class="flick-back-grid" id="flick-starter-back-selects"></div>
+        </div>
         </div>
 
         <!-- タブ5：過去データ閲覧専用 -->
@@ -1591,6 +1612,37 @@ const ADMIN_PASSWORD = "seinan2026_admin"; // 管理者用パスワード[cite: 
     let currentSelectedMatchId = null;
     let currentSelectedMatchGroupKey = null;
     let currentSelectedFinanceYear = null;
+    let currentLostPoints = JSON.parse(localStorage.getItem('vball9_current_lost_points')) || {
+        opponentSpike: 0,
+        opponentFeint: 0,
+        opponentServe: 0,
+        selfError: 0
+    };
+
+    function recordLostPoint(type) {
+        if (!currentLostPoints[type]) currentLostPoints[type] = 0;
+        currentLostPoints[type]++;
+        
+        localStorage.setItem('vball9_current_lost_points', JSON.stringify(currentLostPoints));
+        updateLostPointsDisplay();
+
+        const labels = {
+            opponentSpike: 'スパイク(強)',
+            opponentFeint: 'スパイク(緩)',
+            opponentServe: 'レセプション',
+            selfError: '自滅'
+        };
+        showToast(`失点記録: ${labels[type]}`);
+    }
+
+    function updateLostPointsDisplay() {
+        if (document.getElementById('count-lost-spike')) {
+            document.getElementById('count-lost-spike').textContent = currentLostPoints.opponentSpike || 0;
+            document.getElementById('count-lost-feint').textContent = currentLostPoints.opponentFeint || 0;
+            document.getElementById('count-lost-serve').textContent = currentLostPoints.opponentServe || 0;
+            document.getElementById('count-lost-self').textContent = currentLostPoints.selfError || 0;
+        }
+    }
 
     let isRemoteUpdate = false;
 
@@ -1613,6 +1665,7 @@ function switchTab(tabId) {
         if (tabId === 'tab-flick') {
             renderFlickCourt();
             renderFlickStartersUI();
+            updateLostPointsDisplay();
             renderTeamSummary(players, 'current-team-summary', '📊 チーム全体スタッツ（現在の試合）');
             initMatchInputDefaults();
         } else if (tabId === 'tab-history') {
@@ -1750,8 +1803,13 @@ function applyRolePermissions() {
         }
         
         players.forEach(p => { p.stats = initStatsObj(); });
+        // ★修正：失点記録をゼロクリアしてローカルストレージと画面を更新
+        currentLostPoints = { opponentSpike: 0, opponentFeint: 0, opponentServe: 0, selfError: 0 };
+        localStorage.setItem('vball9_current_lost_points', JSON.stringify(currentLostPoints));
+        updateLostPointsDisplay();
         saveStorage();
         renderFlickCourt();
+        updateLostPointsDisplay();
         renderTeamSummary(players, 'current-team-summary', '📊 チーム全体スタッツ（現在の試合）');
         if (!isSilent) showToast("全選手の記録をリセットしました");
     }
@@ -1804,7 +1862,8 @@ function applyRolePermissions() {
             tournament: tourVal,
             vsName: vsVal,
             playersData: JSON.parse(JSON.stringify(players)),
-            flickStarters: flickStarters.map(s => String(s || ""))
+            flickStarters: flickStarters.map(s => String(s || "")),
+            lostPoints: JSON.parse(JSON.stringify(currentLostPoints))
         };
 
         savedMatches.push(matchRecord);
@@ -1813,6 +1872,7 @@ function applyRolePermissions() {
         nameEl.value = '対';
         if (tourEl) tourEl.value = '';
 
+        // ★修正：resetCurrentStats(true) が失点データも0にリセットするため、保存後に自動で0に戻ります
         resetCurrentStats(true);
         showToast(`「${fullTitle}」を保存しました`);
     }
@@ -2115,8 +2175,20 @@ function applyRolePermissions() {
             name: `${groupKey} 【1試合通算成績 (${groupSets.length}セット)】`,
             playersData: [],
             flickStarters: groupSets[0].flickStarters || [],
+            lostPoints: { opponentSpike: 0, opponentFeint: 0, opponentServe: 0, selfError: 0 },
             isCombined: true
         };
+
+        // 各セットの失点数を合算
+        groupSets.forEach(m => {
+            if (m.lostPoints) {
+                combinedMatch.lostPoints.opponentSpike += m.lostPoints.opponentSpike || 0;
+                combinedMatch.lostPoints.opponentFeint += m.lostPoints.opponentFeint || 0;
+                combinedMatch.lostPoints.opponentServe += m.lostPoints.opponentServe || 0;
+                combinedMatch.lostPoints.selfError += m.lostPoints.selfError || 0;
+            }
+            // ...既存のアタック/守備等合算処理...
+        });
 
         const playerMap = {};
 
@@ -2387,6 +2459,7 @@ function applyRolePermissions() {
         }
 
         renderTeamSummary(match.playersData, 'history-team-summary', '📊 チーム全体スタッツ（この試合）');
+        renderLostPointsSummary(match);
         renderMatchTop3(match.playersData, matchStarters, 'history-top3-summary');
 
         let teamSpikeTotal = 0;
@@ -2543,6 +2616,53 @@ function applyRolePermissions() {
             closeModal('edit-match-name-modal');
             showToast('試合名を修正しました');
         }
+    }
+
+    // 過去試合閲覧時の失点内訳表示処理
+    function renderLostPointsSummary(match) {
+        const lp = match.lostPoints || { opponentSpike: 0, opponentFeint: 0, opponentServe: 0, selfError: 0 };
+        const totalLost = (lp.opponentSpike || 0) + (lp.opponentFeint || 0) + (lp.opponentServe || 0) + (lp.selfError || 0);
+
+        let container = document.getElementById('history-lost-points-summary');
+        if (!container) {
+            const parent = document.getElementById('selected-match-details');
+            if (!parent) return;
+            container = document.createElement('div');
+            container.id = 'history-lost-points-summary';
+            container.className = 'top3-section-box';
+            container.style.cssText = 'background: #fff1f2; border-color: #fecdd3; margin-top: 10px; margin-bottom: 14px;';
+            const top3El = document.getElementById('history-top3-summary');
+            if (top3El) parent.insertBefore(container, top3El);
+            else parent.appendChild(container);
+        }
+
+        const calcPct = (val) => totalLost > 0 ? ((val / totalLost) * 100).toFixed(1) : '0.0';
+
+        container.innerHTML = `
+            <div class="top3-section-title" style="color:#9f1239; border-bottom-color:#fecdd3;">🔻 失点パターン内訳（合計 ${totalLost} 失点）</div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 0.78rem; font-weight: bold; text-align: center;">
+                <div style="background: white; padding: 8px 2px; border-radius: 8px; border: 1px solid #ffe4e6;">
+                    <div style="color: #e11d48;">スパイク(強)</div>
+                    <div style="font-size: 1rem; font-weight: 800; color: #881337; margin-top: 2px;">${lp.opponentSpike || 0}本</div>
+                    <div style="font-size: 0.68rem; color: #64748b;">(${calcPct(lp.opponentSpike || 0)}%)</div>
+                </div>
+                <div style="background: white; padding: 8px 2px; border-radius: 8px; border: 1px solid #ffe4e6;">
+                    <div style="color: #d97706;">スパイク(緩)</div>
+                    <div style="font-size: 1rem; font-weight: 800; color: #78350f; margin-top: 2px;">${lp.opponentFeint || 0}本</div>
+                    <div style="font-size: 0.68rem; color: #64748b;">(${calcPct(lp.opponentFeint || 0)}%)</div>
+                </div>
+                <div style="background: white; padding: 8px 2px; border-radius: 8px; border: 1px solid #ffe4e6;">
+                    <div style="color: #0284c7;">レセプション</div>
+                    <div style="font-size: 1rem; font-weight: 800; color: #0c4a6e; margin-top: 2px;">${lp.opponentServe || 0}本</div>
+                    <div style="font-size: 0.68rem; color: #64748b;">(${calcPct(lp.opponentServe || 0)}%)</div>
+                </div>
+                <div style="background: white; padding: 8px 2px; border-radius: 8px; border: 1px solid #ffe4e6;">
+                    <div style="color: #475569;">自滅</div>
+                    <div style="font-size: 1rem; font-weight: 800; color: #0f172a; margin-top: 2px;">${lp.selfError || 0}本</div>
+                    <div style="font-size: 0.68rem; color: #64748b;">(${calcPct(lp.selfError || 0)}%)</div>
+                </div>
+            </div>
+        `;
     }
 
     function openEditHistoryPlayerModal(playerId) {
