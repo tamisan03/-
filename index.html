@@ -859,7 +859,7 @@ body.user-mode .reset-photo-btn {
 <!-- ログイン入力用モーダル -->
 <div id="login-modal-overlay" class="auth-modal-overlay">
     <div class="auth-card">
-        <h3>チーム管理アプリ ログイン</h3>
+        <h3>静南専用管理アプリ ログイン</h3>
         <p>パスワードを入力してください</p>
         <form onsubmit="handleLoginSubmit(event)">
             <!-- ブラウザのパスワード保存機能を有効化するためのダミーユーザー名入力欄 -->
@@ -974,9 +974,9 @@ body.user-mode .reset-photo-btn {
                     </select>
                     <button class="btn-del" onclick="deleteTacticsPosition()" style="width: auto; padding: 10px 14px; min-width: unset;">削除</button>
                 </div>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+　　　　　　　　<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                     <input type="text" id="tactics-name-input" placeholder="フォーメーション名（例: Aクイックシフト）" style="flex: 1; min-width: 180px;">
-                    <button class="btn-save-match" onclick="saveTacticsPosition()" style="white-space: nowrap;">配置を保存</button>
+                    <button class="btn-save-match" id="tactics-save-btn" onclick="saveTacticsPosition()" style="white-space: nowrap;">作成</button>
                 </div>
             </div>
 
@@ -3679,21 +3679,35 @@ function applyRolePermissions() {
         });
     }
 
-// --- 戦術フォーメーション保存・読込処理 ---
+　　// --- 戦術フォーメーション保存・読込処理 ---
+
+    // ボタンのテキストとスタイルを切り替えるヘルパー関数
+    function updateTacticsSaveBtnLabel() {
+        const selectEl = document.getElementById('tactics-select');
+        const btnEl = document.getElementById('tactics-save-btn');
+        if (!btnEl) return;
+
+        if (selectEl && selectEl.value) {
+            btnEl.textContent = '上書き';
+        } else {
+            btnEl.textContent = '作成';
+        }
+    }
 
     // セレクトボックスの選択肢更新
     function renderTacticsSelect() {
         const selectEl = document.getElementById('tactics-select');
         if (!selectEl) return;
 
-        let html = '<option value="">-- 保存したフォーメーションを選択 --</option>';
+        let html = '<option value="">-- 新規作成 --</option>';
         savedTactics.forEach(t => {
             html += `<option value="${t.id}">${t.name}</option>`;
         });
         selectEl.innerHTML = html;
+        updateTacticsSaveBtnLabel();
     }
 
-// 現在の配置（座標）を戦術として保存（選択中は上書き／未選択は新規保存）
+    // 現在の配置（座標）を戦術として保存（選択中は上書き／未選択は新規作成）
     function saveTacticsPosition() {
         const selectEl = document.getElementById('tactics-select');
         const nameInput = document.getElementById('tactics-name-input');
@@ -3713,12 +3727,13 @@ function applyRolePermissions() {
                 renderTacticsSelect();
                 selectEl.value = selectedId; // 選択状態を維持
                 nameInput.value = '';
+                updateTacticsSaveBtnLabel();
                 showToast(`戦術「${tactics.name}」を上書き保存しました`);
                 return;
             }
         }
 
-        // 未選択の場合は「新規保存」
+        // 未選択の場合は「新規作成」
         if (!name) {
             alert('フォーメーション名を入力してください（例: Cクイックシフト）。');
             return;
@@ -3738,7 +3753,8 @@ function applyRolePermissions() {
         // 保存した新規フォーメーションを選択状態にする
         if (selectEl) selectEl.value = newTactics.id;
         nameInput.value = '';
-        showToast(`新戦術「${name}」として保存しました`);
+        updateTacticsSaveBtnLabel();
+        showToast(`新戦術「${name}」を作成しました`);
     }
 
     // セレクトボックスで選択したフォーメーションを呼び出してコート上に復元
@@ -3748,6 +3764,8 @@ function applyRolePermissions() {
         if (!selectEl) return;
 
         const targetId = selectEl.value;
+        updateTacticsSaveBtnLabel(); // ボタン表示を更新
+
         if (!targetId) {
             if (nameInput) nameInput.value = '';
             return;
@@ -3760,7 +3778,6 @@ function applyRolePermissions() {
             if (tactics.ballPosition) {
                 ballPosition = JSON.parse(JSON.stringify(tactics.ballPosition));
             }
-            // 呼び出し時に名前入力欄にフォーメーション名を自動セット（変更・上書きしやすくするため）
             if (nameInput) nameInput.value = tactics.name;
 
             saveStorage();
@@ -3786,6 +3803,7 @@ function applyRolePermissions() {
         savedTactics = savedTactics.filter(t => String(t.id) !== String(targetId));
         saveStorage();
         renderTacticsSelect();
+        updateTacticsSaveBtnLabel();
         showToast('フォーメーションを削除しました');
     }
 
