@@ -64,7 +64,7 @@
             margin: 0 auto;
             display: grid;
             grid-template-columns: 1fr;
-            gap: 20px;
+            gap: 0px;
             box-sizing: border-box;
         }
 
@@ -102,14 +102,21 @@
     margin-bottom: 20px;
 }
 
+
         .tab-nav {
             display: flex;
             gap: 8px;
-            margin-bottom: 12px;
+            margin-top: 0;
+            margin-bottom: 16px;
             background: #e2e8f0;
             padding: 6px;
             border-radius: 12px;
             overflow-x: auto;
+        }
+
+        /* ★一般ユーザーモードで非表示になるタブがあっても、タブバー自体の高さ・余白を崩さない設定 ★ */
+        body.user-mode .tab-nav {
+            margin-bottom: 16px !important;
         }
 
         .tab-btn {
@@ -139,12 +146,20 @@
         .card {
             background: var(--surface);
             padding: 20px;
+            margin: 0;
             border-radius: 16px;
             border: 1px solid var(--border);
             box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            box-sizing: border-box;
+            min-height: 650px;
         }
 
-        h2 { margin-top: 0; font-size: 1.3rem; color: #1e293b; }
+        h2 {
+            margin-top: 0;
+    	    margin-bottom: 16px; /* 下部余白を16pxに統一 */
+    	    font-size: 1.3rem;
+    	    color: #1e293b;
+	}
 
         .form-group { margin-bottom: 14px; }
         label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #475569; }
@@ -859,16 +874,16 @@ body.user-mode .reset-photo-btn {
 <!-- ログイン入力用モーダル -->
 <div id="login-modal-overlay" class="auth-modal-overlay">
     <div class="auth-card">
-        <h3>静南専用管理アプリ ログイン</h3>
-        <p>パスワードを入力してください</p>
+        <h3>静南クラブ管理アプリ ログイン</h3>
+        <p style="margin-bottom:12px;">氏名の頭文字_パスワード の形式で入力してください</p>
+        <p style="font-size:0.75rem; color:#94a3b8; margin-top:0; margin-bottom:16px;">例: 鈴木 太郎の場合</p>
+        <p style="font-size:0.75rem; color:#94a3b8; margin-top:0; margin-bottom:16px;">例: st_パスワード</p>
         <form onsubmit="handleLoginSubmit(event)">
-            <!-- ブラウザのパスワード保存機能を有効化するためのダミーユーザー名入力欄 -->
             <input type="text" name="username" value="team_user" style="display:none;" autocomplete="username">
             <div class="form-group" style="margin-bottom: 12px;">
-                <input type="password" id="input-app-password" placeholder="パスワード" autocomplete="current-password" required style="text-align:center; font-size:1.1rem; padding:12px;">
+                <input type="password" id="input-app-password" placeholder="例: naoki_seinan2026" autocomplete="current-password" required style="text-align:center; font-size:0.95rem; padding:12px;">
             </div>
             
-            <!-- パスワード記憶用チェックボックス -->
             <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
                 <input type="checkbox" id="remember-password-check" style="width: auto; cursor: pointer;">
                 <label for="remember-password-check" style="margin-bottom: 0; cursor: pointer; font-size: 0.9rem; color: #334155;">ログイン情報を記憶する</label>
@@ -882,6 +897,7 @@ body.user-mode .reset-photo-btn {
 <div style="width: 100%; max-width: 1400px;">
     <div class="tab-nav">
         <button class="tab-btn active" onclick="switchTab('tab-register')">選手登録</button>
+        <button class="tab-btn" id="btn-tab-my-stats" onclick="switchTab('tab-my-stats')">マイ成績</button>
         <button class="tab-btn" onclick="switchTab('tab-list')">選手一覧</button>
         <button class="tab-btn" onclick="switchTab('tab-court')">戦術</button>
         <button class="tab-btn" onclick="switchTab('tab-flick')">記録</button>
@@ -901,6 +917,10 @@ body.user-mode .reset-photo-btn {
             <div class="form-group">
                 <label>名前 (20文字以内)<span class="required">*</span></label>
                 <input type="text" id="p-name" maxlength="20" placeholder="例: 山田 太郎">
+            </div>
+            <div class="form-group">
+                <label>ログイン用ID (英数字)<span class="required">*</span></label>
+                <input type="text" id="p-login-id" maxlength="20" placeholder="例: naoki">
             </div>
             <div class="form-group">
                 <label>選手画像</label>
@@ -940,7 +960,14 @@ body.user-mode .reset-photo-btn {
             <button class="action-btn" onclick="addPlayer()">選手を追加</button>
         </div>
 
-        <!-- タブ2：選手一覧 -->
+        <!-- タブ2：マイ成績（個人生涯成績） -->
+        <div class="card tab-card" id="tab-my-stats">
+            <div id="my-stats-container">
+                <!-- JSで動的にログインユーザーの生涯成績を描画 -->
+            </div>
+        </div>
+
+        <!-- タブ3：選手一覧 -->
         <div class="card tab-card" id="tab-list">
             <h2>選手一覧</h2>
             <div style="font-size:0.8rem; color:#64748b; margin-bottom:8px;">
@@ -962,7 +989,7 @@ body.user-mode .reset-photo-btn {
             </div>
         </div>
 
-　　　　<!-- タブ3：作戦ボード -->
+　　　　<!-- タブ4：作戦ボード -->
         <div class="card tab-card" id="tab-court">
             <h2>作戦ボード</h2>
 
@@ -1029,7 +1056,7 @@ body.user-mode .reset-photo-btn {
             </div>
         </div>
 
-        <!-- タブ4：記録専用 -->
+        <!-- タブ5：記録専用 -->
         <div class="card tab-card" id="tab-flick">
             <h2>記録</h2>
 
@@ -1048,24 +1075,52 @@ body.user-mode .reset-photo-btn {
             <!-- 全体スタッツ -->
             <div id="current-team-summary" class="team-summary-box"></div>
 
-<!-- 自チーム失点記録ボタン（白背景・枠と文字のみ着色） -->
+        <!-- 自チーム失点記録ボタン（白背景・枠と文字のみ着色） -->
+        <div style="margin-bottom: 16px;">
+            <div style="font-size: 0.85rem; font-weight: bold; color: #9f1239; margin-bottom: 6px;">🔻 自チーム失点記録</div>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
+                <button type="button" onclick="recordLostPoint('opponentSpike')" style="background: #ffffff; color: #e11d48; border: 2px solid #e11d48; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-align: center;">
+                    ディグ(強打)<br><span id="count-lost-spike" style="font-size:1.1rem; font-weight:800;">0</span>本
+                </button>
+                <button type="button" onclick="recordLostPoint('opponentFeint')" style="background: #ffffff; color: #d97706; border: 2px solid #f59e0b; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-align: center;">
+                    ディグ(緩打)<br><span id="count-lost-feint" style="font-size:1.1rem; font-weight:800;">0</span>本
+                </button>
+                <button type="button" onclick="recordLostPoint('blocked')" style="background: #ffffff; color: #7c3aed; border: 2px solid #8b5cf6; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-align: center;">
+                    被ブロック<br><span id="count-lost-blocked" style="font-size:1.1rem; font-weight:800;">0</span>本
+                </button>
+                <button type="button" onclick="recordLostPoint('opponentServe')" style="background: #ffffff; color: #0284c7; border: 2px solid #0284c7; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-align: center;">
+                    レセプション<br><span id="count-lost-serve" style="font-size:1.1rem; font-weight:800;">0</span>本
+                </button>
+                <button type="button" onclick="recordLostPoint('selfError')" style="background: #ffffff; color: #475569; border: 2px solid #64748b; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-align: center;">
+                    自滅<br><span id="count-lost-self" style="font-size:1.1rem; font-weight:800;">0</span>本
+                </button>
+            </div>
+        </div>
+
+        <!-- ★追加：相手攻撃位置の失点記録ボタン★ -->
             <div style="margin-bottom: 16px;">
-                <div style="font-size: 0.85rem; font-weight: bold; color: #9f1239; margin-bottom: 6px;">🔻 自チーム失点記録</div>
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
-                    <button type="button" onclick="recordLostPoint('opponentSpike')" style="background: #ffffff; color: #e11d48; border: 2px solid #e11d48; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.78rem; text-align: center;">
-                        スパイク(強)<br><span id="count-lost-spike" style="font-size:1.1rem; font-weight:800;">0</span>本
+                <div style="font-size: 0.85rem; font-weight: bold; color: #1e3a8a; margin-bottom: 6px;"> 攻撃ポジション別失点記録</div>
+                <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;">
+                    <button type="button" onclick="recordOpponentAttackPos('left')" style="background: #ffffff; color: #2563eb; border: 2px solid #2563eb; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-align: center;">
+                        レフト<br><span id="count-opp-left" style="font-size:1.1rem; font-weight:800;">0</span>本
                     </button>
-                    <button type="button" onclick="recordLostPoint('opponentFeint')" style="background: #ffffff; color: #d97706; border: 2px solid #f59e0b; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.78rem; text-align: center;">
-                        スパイク(緩)<br><span id="count-lost-feint" style="font-size:1.1rem; font-weight:800;">0</span>本
+                    <button type="button" onclick="recordOpponentAttackPos('leftSemi')" style="background: #ffffff; color: #2563eb; border: 2px solid #2563eb; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-align: center;">
+                        レフトセミ<br><span id="count-opp-leftSemi" style="font-size:1.1rem; font-weight:800;">0</span>本
                     </button>
-                    <button type="button" onclick="recordLostPoint('opponentServe')" style="background: #ffffff; color: #0284c7; border: 2px solid #0284c7; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.78rem; text-align: center;">
-                        レセプション<br><span id="count-lost-serve" style="font-size:1.1rem; font-weight:800;">0</span>本
+                    <button type="button" onclick="recordOpponentAttackPos('quick')" style="background: #ffffff; color: #059669; border: 2px solid #10b981; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-align: center;">
+                        速攻<br><span id="count-opp-quick" style="font-size:1.1rem; font-weight:800;">0</span>本
                     </button>
-                    <button type="button" onclick="recordLostPoint('selfError')" style="background: #ffffff; color: #475569; border: 2px solid #64748b; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.78rem; text-align: center;">
-                        自滅<br><span id="count-lost-self" style="font-size:1.1rem; font-weight:800;">0</span>本
+                    <button type="button" onclick="recordOpponentAttackPos('rightSemi')" style="background: #ffffff; color: #d97706; border: 2px solid #f59e0b; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-align: center;">
+                        ライトセミ<br><span id="count-opp-rightSemi" style="font-size:1.1rem; font-weight:800;">0</span>本
+                    </button>
+                    <button type="button" onclick="recordOpponentAttackPos('right')" style="background: #ffffff; color: #d97706; border: 2px solid #f59e0b; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-align: center;">
+                        ライト<br><span id="count-opp-right" style="font-size:1.1rem; font-weight:800;">0</span>本
+                    </button>
+                    <button type="button" onclick="recordOpponentAttackPos('twoAttack')" style="background: #ffffff; color: #7c3aed; border: 2px solid #8b5cf6; padding: 10px 2px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-align: center;">
+                        2アタック<br><span id="count-opp-twoAttack" style="font-size:1.1rem; font-weight:800;">0</span>本
                     </button>
                 </div>
-            </div>
+            </div>        
 
             <div style="font-size:0.8rem; color:#64748b; margin-bottom:12px;">
                 ※選手ボタン上でフリック ➔ <b>上</b>: スパイク / <b>左</b>: ブロック / <b>右</b>: レセプション (※セッターはトスミス) / <b>下</b>: サーブ<br>
@@ -1099,7 +1154,7 @@ body.user-mode .reset-photo-btn {
         </div>
         </div>
 
-        <!-- タブ5：過去データ閲覧専用 -->
+        <!-- タブ6：過去データ閲覧専用 -->
         <div class="card tab-card" id="tab-history">
             <h2>過去データ（試合履歴）</h2>
             <div style="font-size:0.8rem; color:#64748b; margin-bottom:12px;">
@@ -1149,7 +1204,7 @@ body.user-mode .reset-photo-btn {
             </div>
         </div>
 
-        <!-- タブ6：チームの課題 -->
+        <!-- タブ7：チームの課題 -->
         <div class="card tab-card" id="tab-issues">
             <h2>チームの課題管理・弱点分析</h2>
             
@@ -1195,7 +1250,7 @@ body.user-mode .reset-photo-btn {
             </div>
         </div>
 
-        <!-- タブ7：収支管理 -->
+        <!-- タブ8：収支管理 -->
         <div class="card tab-card" id="tab-finance">
             <h2>チーム収支管理</h2>
             
@@ -1299,6 +1354,10 @@ body.user-mode .reset-photo-btn {
         <div class="form-group">
             <label>名前<span class="required">*</span></label>
             <input type="text" id="edit-name">
+        </div>
+        <div class="form-group">
+            <label>ログイン用ID (英数字)<span class="required">*</span></label>
+            <input type="text" id="edit-login-id">
         </div>
         <div class="form-group">
             <label>選手画像 (変更する場合のみ)</label>
@@ -1496,9 +1555,123 @@ body.user-mode .reset-photo-btn {
 </div>
 
 <script>
-const ADMIN_PASSWORD = "seinan2026_admin"; // 管理者用パスワード[cite: 1]
-      const USER_PASSWORD = "seinan2026";        // 一般ユーザー用パスワード[cite: 1]
-      let isAdmin = false;                        // 管理者フラグ[cite: 1]
+    const ADMIN_PASSWORD = "seinan2026_admin";
+    const USER_PASSWORD = "seinan2026";
+    let isAdmin = false;
+    let loginUserName = localStorage.getItem('vball9_login_user_name') || ""; // ★ログインしたユーザー名
+
+    async function handleLoginSubmit(event) {
+        event.preventDefault();
+
+        const passInput = document.getElementById('input-app-password');
+        const rawInput = passInput.value.trim();
+        const rememberCheck = document.getElementById('remember-password-check').checked;
+
+        // 最後のアンダースコア `_` の位置を探して「名前」と「パスワード」に分割
+        const lastUnderscoreIdx = rawInput.lastIndexOf('_');
+        
+        let userNameInput = "";
+        let inputPass = "";
+
+        if (lastUnderscoreIdx !== -1) {
+            if (rawInput.endsWith("_" + ADMIN_PASSWORD)) {
+                userNameInput = rawInput.slice(0, -(ADMIN_PASSWORD.length + 1));
+                inputPass = ADMIN_PASSWORD;
+            } else if (rawInput.endsWith("_" + USER_PASSWORD)) {
+                userNameInput = rawInput.slice(0, -(USER_PASSWORD.length + 1));
+                inputPass = USER_PASSWORD;
+            } else {
+                inputPass = rawInput;
+            }
+        } else {
+            inputPass = rawInput;
+        }
+
+        // ★ 名前（ID）が入力されていない場合は管理者も含めて一律でログイン拒否
+        if (!userNameInput || userNameInput.trim() === '') {
+            alert("ログインには名前（ID）が必要です。\n「名前_パスワード」の形式で入力してください。\n例: naoki_パスワード ");
+            passInput.focus();
+            return;
+        }
+
+        // パスワード判定
+        if (inputPass !== ADMIN_PASSWORD && inputPass !== USER_PASSWORD) {
+            alert("パスワードが正しくありません。\n【入力例】 naoki_パスワード");
+            passInput.value = '';
+            passInput.focus();
+            return;
+        }
+
+        isAdmin = (inputPass === ADMIN_PASSWORD);
+
+        // ★ ログイン用ID (loginId) または 表示名 (name) と照合
+        const cleanInputId = userNameInput.trim().toLowerCase();
+        
+        const matchedPlayer = players.find(p => {
+            const playerLoginId = (p.loginId || '').trim().toLowerCase();
+            const playerName = (p.name || '').trim().toLowerCase();
+            return playerLoginId === cleanInputId || playerName === cleanInputId;
+        });
+
+        // ★ 管理者であっても選手一覧に登録がない名前の場合はログイン不可にする場合
+        if (!matchedPlayer) {
+            alert(`ログインID「${userNameInput}」は選手一覧に登録されていません。\n選手一覧にある正確な名前またはログイン用IDを入力してください。`);
+            passInput.focus();
+            return;
+        }
+
+        // 照合成功時は表示名をセット
+        loginUserName = matchedPlayer.name;
+
+        localStorage.setItem('vball9_is_admin', JSON.stringify(isAdmin));
+        localStorage.setItem('vball9_login_user_name', loginUserName);
+
+        if (rememberCheck) {
+            localStorage.setItem('vball9_saved_password', rawInput);
+            localStorage.setItem('vball9_remember_me', 'true');
+        } else {
+            localStorage.removeItem('vball9_saved_password');
+            localStorage.removeItem('vball9_remember_me');
+        }
+
+        try {
+            const { signInAnonymously } = window.authTools;
+            await signInAnonymously(window.auth);
+            
+            document.getElementById('login-modal-overlay').style.display = 'none';
+            
+            setupFirestoreSync();
+            applyRolePermissions();
+            updateLoginUserInfoDisplay();
+            render();
+
+            // 初期表示タブの設定
+            if (!isAdmin) {
+                switchTab('tab-my-stats');
+            } else {
+                switchTab('tab-register');
+            }
+
+            showToast(`${loginUserName}さんとしてログインしました`);
+        } catch (error) {
+            console.error("認証エラー:", error);
+            alert("ログイン処理に失敗しました。");
+        }
+    }
+
+    // 画面上にログイン中ユーザー名を表示する関数
+    function updateLoginUserInfoDisplay() {
+        let infoEl = document.getElementById('user-info-display');
+        if (!infoEl) {
+            const container = document.querySelector('.container') || document.body;
+            infoEl = document.createElement('div');
+            infoEl.id = 'user-info-display';
+            infoEl.style.cssText = 'text-align: right; font-size: 0.85rem; font-weight: bold; color: #475569; margin-top: 0; margin-bottom: 8px; padding-right: 4px;';
+            container.insertBefore(infoEl, container.firstChild);
+        }
+        const roleLabel = isAdmin ? "管理者" : "一般";
+        infoEl.innerHTML = `👤 ログイン中: <span style="color:#2563eb;">${loginUserName || "ゲスト"}</span> (${roleLabel})`;
+    }
 
     async function initAppAuth() {
         if (!window.auth || !window.authTools) {
@@ -1526,48 +1699,7 @@ const ADMIN_PASSWORD = "seinan2026_admin"; // 管理者用パスワード[cite: 
         document.getElementById('login-modal-overlay').style.display = 'flex';
     }
 
-    async function handleLoginSubmit(event) {
-        event.preventDefault(); // フォーム送信によるページリロードを防止
-
-        const passInput = document.getElementById('input-app-password');
-        const inputPass = passInput.value;
-        const rememberCheck = document.getElementById('remember-password-check').checked;
-
-        if (inputPass !== ADMIN_PASSWORD && inputPass !== USER_PASSWORD) {
-            alert("パスワードが正しくありません。");
-            passInput.value = '';
-            passInput.focus();
-            return;
-        }
-
-        isAdmin = (inputPass === ADMIN_PASSWORD);
-        localStorage.setItem('vball9_is_admin', JSON.stringify(isAdmin));
-
-        // チェック状態に応じて保存・クリア処理
-        if (rememberCheck) {
-            localStorage.setItem('vball9_remember_me', 'true');
-            localStorage.setItem('vball9_saved_password', inputPass);
-        } else {
-            localStorage.removeItem('vball9_remember_me');
-            localStorage.removeItem('vball9_saved_password');
-        }
-
-        try {
-            const { signInAnonymously } = window.authTools;
-            await signInAnonymously(window.auth);
-            
-            // 認証成功後にモーダルを非表示
-            document.getElementById('login-modal-overlay').style.display = 'none';
-            
-            setupFirestoreSync();
-            applyRolePermissions();
-            render();
-            showToast(isAdmin ? "管理者としてログインしました" : "一般ユーザーとしてログインしました");
-        } catch (error) {
-            console.error("認証エラー:", error);
-            alert("ログイン処理に失敗しました。Firebase Consoleで「匿名認証」が有効化されているかご確認ください。");
-        }
-    }    const POSITIONS = [
+    const POSITIONS = [
         "レフト", "レフトセミ", "クイック", "セッター", "ライトセミ", 
         "ライト", "ハーフセンター", "レフトバック", "センターバック", "ライトバック"
     ];
@@ -1615,9 +1747,48 @@ const ADMIN_PASSWORD = "seinan2026_admin"; // 管理者用パスワード[cite: 
     let currentLostPoints = JSON.parse(localStorage.getItem('vball9_current_lost_points')) || {
         opponentSpike: 0,
         opponentFeint: 0,
+        blocked: 0,
         opponentServe: 0,
         selfError: 0
     };
+
+    let currentOpponentAttacks = JSON.parse(localStorage.getItem('vball9_current_opponent_attacks')) || {
+    left: 0,
+    leftSemi: 0,
+    quick: 0,
+    rightSemi: 0,
+    right: 0,
+    twoAttack: 0
+    };
+
+    function recordOpponentAttackPos(pos) {
+        if (!currentOpponentAttacks[pos]) currentOpponentAttacks[pos] = 0;
+        currentOpponentAttacks[pos]++;
+        
+        localStorage.setItem('vball9_current_opponent_attacks', JSON.stringify(currentOpponentAttacks));
+        updateOpponentAttacksDisplay();
+
+        const labels = {
+            left: 'レフト',
+            leftSemi: 'レフトセミ',
+            quick: '速攻',
+            rightSemi: 'ライトセミ',
+            right: 'ライト',
+            twoAttack: '2アタック'
+        };
+        showToast(`相手攻撃記録: ${labels[pos]}`);
+    }
+
+    function updateOpponentAttacksDisplay() {
+        if (document.getElementById('count-opp-left')) {
+            document.getElementById('count-opp-left').textContent = currentOpponentAttacks.left || 0;
+            document.getElementById('count-opp-leftSemi').textContent = currentOpponentAttacks.leftSemi || 0;
+            document.getElementById('count-opp-quick').textContent = currentOpponentAttacks.quick || 0;
+            document.getElementById('count-opp-rightSemi').textContent = currentOpponentAttacks.rightSemi || 0;
+            document.getElementById('count-opp-right').textContent = currentOpponentAttacks.right || 0;
+            document.getElementById('count-opp-twoAttack').textContent = currentOpponentAttacks.twoAttack || 0;
+        }
+    }
 
     function recordLostPoint(type) {
         if (!currentLostPoints[type]) currentLostPoints[type] = 0;
@@ -1627,8 +1798,9 @@ const ADMIN_PASSWORD = "seinan2026_admin"; // 管理者用パスワード[cite: 
         updateLostPointsDisplay();
 
         const labels = {
-            opponentSpike: 'スパイク(強)',
-            opponentFeint: 'スパイク(緩)',
+            opponentSpike: 'ディグ(強打)',
+            opponentFeint: 'ディグ(緩打)',
+            blocked: '被ブロック',
             opponentServe: 'レセプション',
             selfError: '自滅'
         };
@@ -1639,15 +1811,16 @@ const ADMIN_PASSWORD = "seinan2026_admin"; // 管理者用パスワード[cite: 
         if (document.getElementById('count-lost-spike')) {
             document.getElementById('count-lost-spike').textContent = currentLostPoints.opponentSpike || 0;
             document.getElementById('count-lost-feint').textContent = currentLostPoints.opponentFeint || 0;
+            if (document.getElementById('count-lost-blocked')) {
+                document.getElementById('count-lost-blocked').textContent = currentLostPoints.blocked || 0;
+            }
             document.getElementById('count-lost-serve').textContent = currentLostPoints.opponentServe || 0;
             document.getElementById('count-lost-self').textContent = currentLostPoints.selfError || 0;
         }
     }
-
     let isRemoteUpdate = false;
 
-function switchTab(tabId) {
-        // 一般ユーザーが管理者専用タブ（選手登録・記録・収支）を開こうとした場合はブロック
+    function switchTab(tabId) {
         if (!isAdmin && (tabId === 'tab-register' || tabId === 'tab-flick' || tabId === 'tab-finance')) {
             alert("この機能は管理者のみ利用可能です。");
             return;
@@ -1657,15 +1830,28 @@ function switchTab(tabId) {
 
         document.getElementById(tabId).classList.add('active');
 
-        const indexMap = { 'tab-register': 0, 'tab-list': 1, 'tab-court': 2, 'tab-flick': 3, 'tab-history': 4, 'tab-issues': 5, 'tab-finance': 6 };
+        // ★マイ成績を追加したインデックスマップに修正
+        const indexMap = { 
+            'tab-register': 0, 
+            'tab-my-stats': 1, 
+            'tab-list': 2, 
+            'tab-court': 3, 
+            'tab-flick': 4, 
+            'tab-history': 5, 
+            'tab-issues': 6, 
+            'tab-finance': 7 
+        };
         if (indexMap[tabId] !== undefined) {
             document.querySelectorAll('.tab-btn')[indexMap[tabId]].classList.add('active');
         }
 
-        if (tabId === 'tab-flick') {
+        if (tabId === 'tab-my-stats') {
+            renderMyStats();
+        } else if (tabId === 'tab-flick') {
             renderFlickCourt();
             renderFlickStartersUI();
             updateLostPointsDisplay();
+            updateOpponentAttacksDisplay();
             renderTeamSummary(players, 'current-team-summary', '📊 チーム全体スタッツ（現在の試合）');
             initMatchInputDefaults();
         } else if (tabId === 'tab-history') {
@@ -1677,6 +1863,101 @@ function switchTab(tabId) {
             initFinanceInputDefaults();
         }
     }
+
+    function renderMyStats() {
+        const container = document.getElementById('my-stats-container');
+        if (!container) return;
+
+        // ログイン中のユーザー名と一致する選手を取得
+        const myPlayer = players.find(p => p.name === loginUserName);
+
+        if (!myPlayer) {
+            container.innerHTML = `
+                <h2>マイ成績（生涯通算）</h2>
+                <div style="text-align:center; padding:40px 10px; color:#64748b;">
+                    <p style="font-size:1.1rem; font-weight:bold; margin-bottom:8px;">選手データが見つかりません</p>
+                    <p style="font-size:0.85rem;">ログイン名（${loginUserName || "未ログイン"}）に該当する選手が「選手一覧」に登録されていないか、管理者ログイン中です。</p>
+                </div>
+            `;
+            return;
+        }
+
+        // 全過去試合＋現在の試合の通算成績を取得
+        const st = getCombinedPlayerStats(myPlayer.id);
+
+        const spikeTotal = st.spike.success + st.spike.continue + st.spike.error;
+        const spikeRate = calcRate(st.spike.success, spikeTotal);
+
+        const serveTotal = st.serve.success + st.serve.continue + st.serve.error;
+        const serveEffective = st.serve.success || 0;
+        const serveEffectiveRate = calcRate(serveEffective, serveTotal);
+
+        const recTotal = st.reception.success + st.reception.continue + st.reception.error;
+        const recRate = calcRate(st.reception.success, recTotal);
+
+        const photoHtml = myPlayer.photo ? `<img src="${myPlayer.photo}" class="info-avatar" style="margin-bottom:8px;">` : '';
+        const condEmoji = CONDITION_EMOJI[myPlayer.condition] || '普通';
+
+        // AIアドバイスの生成
+        const aiAdviceHtml = generateAIAdvice(st, false);
+
+        container.innerHTML = `
+            <div style="text-align:center; margin-bottom:16px;">
+                ${photoHtml}
+                <h2 style="margin:4px 0;">#${myPlayer.number} ${myPlayer.name} の生涯通算成績</h2>
+                <div style="font-size:0.85rem; color:#64748b;">
+                    メイン: <span class="badge">${myPlayer.position}</span> | 調子: ${condEmoji} ${myPlayer.condition || '普通'}
+                </div>
+            </div>
+
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:16px;">
+                <h3 style="font-size:1rem; margin-top:0; margin-bottom:10px; color:#1e293b; text-align:center;"> 生涯通算スタッツ</h3>
+                <table class="stats-table" style="background:#ffffff; border-radius:8px; overflow:hidden;">
+                    <thead>
+                        <tr>
+                            <th>項目</th>
+                            <th>決定率/効果率</th>
+                            <th>成功 / 打数</th>
+                            <th>ミス</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><b>スパイク</b></td>
+                            <td><b style="color:#2563eb;">${spikeRate}</b></td>
+                            <td>${st.spike.success} / ${spikeTotal}</td>
+                            <td>${st.spike.error}</td>
+                        </tr>
+                        <tr>
+                            <td><b>サーブ</b></td>
+                            <td><b style="color:#2563eb;">${serveEffectiveRate}</b></td>
+                            <td>有効: ${serveEffective} / ${serveTotal}</td>
+                            <td>${st.serve.error}</td>
+                        </tr>
+                        <tr>
+                            <td><b>ブロック</b></td>
+                            <td><b style="color:#2563eb;">${st.block.success}本</b></td>
+                            <td>ワンタッチ: ${st.block.continue}</td>
+                            <td>${st.block.error}</td>
+                        </tr>
+                        <tr>
+                            <td><b>レセプション</b></td>
+                            <td><b style="color:#2563eb;">${recRate}</b></td>
+                            <td>A.Bパス: ${st.reception.success} / ${recTotal}</td>
+                            <td>${st.reception.error}</td>
+                        </tr>
+                        <tr>
+                            <td><b>その他ミス</b></td>
+                            <td colspan="3"><b>${st.otherError || 0}本</b></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            ${aiAdviceHtml}
+        `;
+    }
+
     async function saveStorage() {
         localStorage.setItem('vball9_players', JSON.stringify(players));
         localStorage.setItem('vball9_starters', JSON.stringify(starters));
@@ -1750,41 +2031,40 @@ function switchTab(tabId) {
         });
     }
 
-function applyRolePermissions() {
-    const storedAdmin = localStorage.getItem('vball9_is_admin');
-    if (storedAdmin !== null) {
-        isAdmin = JSON.parse(storedAdmin);
-    }
-
-    // 一般ユーザーモードの判定用クラスをbodyに付与/解除
-    if (!isAdmin) {
-        document.body.classList.add('user-mode');
-    } else {
-        document.body.classList.remove('user-mode');
-    }
-
-    const registerTabBtn = document.querySelector(".tab-btn[onclick*='tab-register']");
-    const flickTabBtn = document.querySelector(".tab-btn[onclick*='tab-flick']");
-    const financeTabBtn = document.querySelector(".tab-btn[onclick*='tab-finance']");
-
-    if (!isAdmin) {
-        // 一般ユーザー：選手登録・記録・収支タブのボタンを非表示
-        if (registerTabBtn) registerTabBtn.style.display = 'none';
-        if (flickTabBtn) flickTabBtn.style.display = 'none';
-        if (financeTabBtn) financeTabBtn.style.display = 'none';
-
-        // 制限対象のタブが開いている場合は「選手一覧」に切り替え
-        const activeTab = document.querySelector('.tab-card.active');
-        if (!activeTab || activeTab.id === 'tab-register' || activeTab.id === 'tab-flick' || activeTab.id === 'tab-finance') {
-            switchTab('tab-list');
+    function applyRolePermissions() {
+        const storedAdmin = localStorage.getItem('vball9_is_admin');
+        if (storedAdmin !== null) {
+            isAdmin = JSON.parse(storedAdmin);
         }
-    } else {
-        // 管理者：全タブ表示
-        if (registerTabBtn) registerTabBtn.style.display = 'inline-block';
-        if (flickTabBtn) flickTabBtn.style.display = 'inline-block';
-        if (financeTabBtn) financeTabBtn.style.display = 'inline-block';
+
+        if (!isAdmin) {
+            document.body.classList.add('user-mode');
+        } else {
+            document.body.classList.remove('user-mode');
+        }
+
+        const registerTabBtn = document.querySelector(".tab-btn[onclick*='tab-register']");
+        const flickTabBtn = document.querySelector(".tab-btn[onclick*='tab-flick']");
+        const financeTabBtn = document.querySelector(".tab-btn[onclick*='tab-finance']");
+
+        if (!isAdmin) {
+            // 一般ユーザー：管理者専用タブのボタンを非表示
+            if (registerTabBtn) registerTabBtn.style.display = 'none';
+            if (flickTabBtn) flickTabBtn.style.display = 'none';
+            if (financeTabBtn) financeTabBtn.style.display = 'none';
+
+            // 制限対象のタブが開いている場合は「マイ成績」に切り替え
+            const activeTab = document.querySelector('.tab-card.active');
+            if (!activeTab || activeTab.id === 'tab-register' || activeTab.id === 'tab-flick' || activeTab.id === 'tab-finance') {
+                switchTab('tab-my-stats'); // ★ 'tab-list' から 'tab-my-stats' に変更
+            }
+        } else {
+            // 管理者：全タブ表示
+            if (registerTabBtn) registerTabBtn.style.display = 'inline-block';
+            if (flickTabBtn) flickTabBtn.style.display = 'inline-block';
+            if (financeTabBtn) financeTabBtn.style.display = 'inline-block';
+        }
     }
-}
 
     function initStatsObj() {
         return {
@@ -1802,9 +2082,12 @@ function applyRolePermissions() {
             if (!confirm("現在の全選手の記録データをリセット（0に初期化）してよろしいですか？")) return;
         }
         
+        currentOpponentAttacks = { left: 0, leftSemi: 0, quick: 0, rightSemi: 0, right: 0, twoAttack: 0 };
+        localStorage.setItem('vball9_current_opponent_attacks', JSON.stringify(currentOpponentAttacks));
+        updateOpponentAttacksDisplay();
         players.forEach(p => { p.stats = initStatsObj(); });
         // ★修正：失点記録をゼロクリアしてローカルストレージと画面を更新
-        currentLostPoints = { opponentSpike: 0, opponentFeint: 0, opponentServe: 0, selfError: 0 };
+        currentLostPoints = { opponentSpike: 0, opponentFeint: 0, blocked: 0, opponentServe: 0, selfError: 0 };
         localStorage.setItem('vball9_current_lost_points', JSON.stringify(currentLostPoints));
         updateLostPointsDisplay();
         saveStorage();
@@ -1863,7 +2146,8 @@ function applyRolePermissions() {
             vsName: vsVal,
             playersData: JSON.parse(JSON.stringify(players)),
             flickStarters: flickStarters.map(s => String(s || "")),
-            lostPoints: JSON.parse(JSON.stringify(currentLostPoints))
+            lostPoints: JSON.parse(JSON.stringify(currentLostPoints)),
+            opponentAttacks: JSON.parse(JSON.stringify(currentOpponentAttacks))
         };
 
         savedMatches.push(matchRecord);
@@ -2175,7 +2459,8 @@ function applyRolePermissions() {
             name: `${groupKey} 【1試合通算成績 (${groupSets.length}セット)】`,
             playersData: [],
             flickStarters: groupSets[0].flickStarters || [],
-            lostPoints: { opponentSpike: 0, opponentFeint: 0, opponentServe: 0, selfError: 0 },
+            lostPoints: { opponentSpike: 0, opponentFeint: 0, blocked: 0, opponentServe: 0, selfError: 0 },
+            opponentAttacks: { left: 0, leftSemi: 0, quick: 0, rightSemi: 0, right: 0, twoAttack: 0 },
             isCombined: true
         };
 
@@ -2184,10 +2469,23 @@ function applyRolePermissions() {
             if (m.lostPoints) {
                 combinedMatch.lostPoints.opponentSpike += m.lostPoints.opponentSpike || 0;
                 combinedMatch.lostPoints.opponentFeint += m.lostPoints.opponentFeint || 0;
+                combinedMatch.lostPoints.blocked += m.lostPoints.blocked || 0;
                 combinedMatch.lostPoints.opponentServe += m.lostPoints.opponentServe || 0;
                 combinedMatch.lostPoints.selfError += m.lostPoints.selfError || 0;
             }
-            // ...既存のアタック/守備等合算処理...
+        });
+
+        // 各セットのデータを合算
+        groupSets.forEach(m => {
+            // (lostPoints合算処理...)
+            if (m.opponentAttacks) {
+                combinedMatch.opponentAttacks.left += m.opponentAttacks.left || 0;
+                combinedMatch.opponentAttacks.leftSemi += m.opponentAttacks.leftSemi || 0;
+                combinedMatch.opponentAttacks.quick += m.opponentAttacks.quick || 0;
+                combinedMatch.opponentAttacks.rightSemi += m.opponentAttacks.rightSemi || 0;
+                combinedMatch.opponentAttacks.right += m.opponentAttacks.right || 0;
+                combinedMatch.opponentAttacks.twoAttack += m.opponentAttacks.twoAttack || 0;
+            }
         });
 
         const playerMap = {};
@@ -2620,8 +2918,8 @@ function applyRolePermissions() {
 
     // 過去試合閲覧時の失点内訳表示処理
     function renderLostPointsSummary(match) {
-        const lp = match.lostPoints || { opponentSpike: 0, opponentFeint: 0, opponentServe: 0, selfError: 0 };
-        const totalLost = (lp.opponentSpike || 0) + (lp.opponentFeint || 0) + (lp.opponentServe || 0) + (lp.selfError || 0);
+        const lp = match.lostPoints || { opponentSpike: 0, opponentFeint: 0, blocked: 0, opponentServe: 0, selfError: 0 };
+        const totalLost = (lp.opponentSpike || 0) + (lp.opponentFeint || 0) + (lp.blocked || 0) + (lp.opponentServe || 0) + (lp.selfError || 0);
 
         let container = document.getElementById('history-lost-points-summary');
         if (!container) {
@@ -2640,26 +2938,86 @@ function applyRolePermissions() {
 
         container.innerHTML = `
             <div class="top3-section-title" style="color:#9f1239; border-bottom-color:#fecdd3;">🔻 失点パターン内訳（合計 ${totalLost} 失点）</div>
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 0.78rem; font-weight: bold; text-align: center;">
-                <div style="background: white; padding: 8px 2px; border-radius: 8px; border: 1px solid #ffe4e6;">
-                    <div style="color: #e11d48;">スパイク(強)</div>
-                    <div style="font-size: 1rem; font-weight: 800; color: #881337; margin-top: 2px;">${lp.opponentSpike || 0}本</div>
-                    <div style="font-size: 0.68rem; color: #64748b;">(${calcPct(lp.opponentSpike || 0)}%)</div>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; font-size: 0.75rem; font-weight: bold; text-align: center;">
+                <div style="background: white; padding: 6px 2px; border-radius: 8px; border: 1px solid #ffe4e6;">
+                    <div style="color: #e11d48;">ディグ(強打)</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #881337; margin-top: 2px;">${lp.opponentSpike || 0}本</div>
+                    <div style="font-size: 0.65rem; color: #64748b;">(${calcPct(lp.opponentSpike || 0)}%)</div>
                 </div>
-                <div style="background: white; padding: 8px 2px; border-radius: 8px; border: 1px solid #ffe4e6;">
-                    <div style="color: #d97706;">スパイク(緩)</div>
-                    <div style="font-size: 1rem; font-weight: 800; color: #78350f; margin-top: 2px;">${lp.opponentFeint || 0}本</div>
-                    <div style="font-size: 0.68rem; color: #64748b;">(${calcPct(lp.opponentFeint || 0)}%)</div>
+                <div style="background: white; padding: 6px 2px; border-radius: 8px; border: 1px solid #ffe4e6;">
+                    <div style="color: #d97706;">ディグ(緩打)</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #78350f; margin-top: 2px;">${lp.opponentFeint || 0}本</div>
+                    <div style="font-size: 0.65rem; color: #64748b;">(${calcPct(lp.opponentFeint || 0)}%)</div>
                 </div>
-                <div style="background: white; padding: 8px 2px; border-radius: 8px; border: 1px solid #ffe4e6;">
+                <div style="background: white; padding: 6px 2px; border-radius: 8px; border: 1px solid #ffe4e6;">
+                    <div style="color: #7c3aed;">被ブロック</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #5b21b6; margin-top: 2px;">${lp.blocked || 0}本</div>
+                    <div style="font-size: 0.65rem; color: #64748b;">(${calcPct(lp.blocked || 0)}%)</div>
+                </div>
+                <div style="background: white; padding: 6px 2px; border-radius: 8px; border: 1px solid #ffe4e6;">
                     <div style="color: #0284c7;">レセプション</div>
-                    <div style="font-size: 1rem; font-weight: 800; color: #0c4a6e; margin-top: 2px;">${lp.opponentServe || 0}本</div>
-                    <div style="font-size: 0.68rem; color: #64748b;">(${calcPct(lp.opponentServe || 0)}%)</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #0c4a6e; margin-top: 2px;">${lp.opponentServe || 0}本</div>
+                    <div style="font-size: 0.65rem; color: #64748b;">(${calcPct(lp.opponentServe || 0)}%)</div>
                 </div>
-                <div style="background: white; padding: 8px 2px; border-radius: 8px; border: 1px solid #ffe4e6;">
+                <div style="background: white; padding: 6px 2px; border-radius: 8px; border: 1px solid #ffe4e6;">
                     <div style="color: #475569;">自滅</div>
-                    <div style="font-size: 1rem; font-weight: 800; color: #0f172a; margin-top: 2px;">${lp.selfError || 0}本</div>
-                    <div style="font-size: 0.68rem; color: #64748b;">(${calcPct(lp.selfError || 0)}%)</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin-top: 2px;">${lp.selfError || 0}本</div>
+                    <div style="font-size: 0.65rem; color: #64748b;">(${calcPct(lp.selfError || 0)}%)</div>
+                </div>
+            </div>
+        `;
+
+        // 相手被攻撃位置の内訳表示
+        const oa = match.opponentAttacks || { left: 0, leftSemi: 0, quick: 0, rightSemi: 0, right: 0, twoAttack: 0 };
+        const totalOppAttacks = (oa.left || 0) + (oa.leftSemi || 0) + (oa.quick || 0) + (oa.rightSemi || 0) + (oa.right || 0) + (oa.twoAttack || 0);
+
+        let oaContainer = document.getElementById('history-opponent-attacks-summary');
+        if (!oaContainer) {
+            const parent = document.getElementById('selected-match-details');
+            if (!parent) return;
+            oaContainer = document.createElement('div');
+            oaContainer.id = 'history-opponent-attacks-summary';
+            oaContainer.className = 'top3-section-box';
+            oaContainer.style.cssText = 'background: #eff6ff; border-color: #bfdbfe; margin-top: 10px; margin-bottom: 14px;';
+            const top3El = document.getElementById('history-top3-summary');
+            if (top3El) parent.insertBefore(oaContainer, top3El);
+            else parent.appendChild(oaContainer);
+        }
+
+        const calcOaPct = (val) => totalOppAttacks > 0 ? ((val / totalOppAttacks) * 100).toFixed(1) : '0.0';
+
+        oaContainer.innerHTML = `
+            <div class="top3-section-title" style="color:#1e3a8a; border-bottom-color:#bfdbfe;"> 相手攻撃ポジション別失点内訳（合計 ${totalOppAttacks} 本）</div>
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; font-size: 0.75rem; font-weight: bold; text-align: center;">
+                <div style="background: white; padding: 6px 2px; border-radius: 8px; border: 1px solid #dbeafe;">
+                    <div style="color: #2563eb;">レフト</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #1e4ed8; margin-top: 2px;">${oa.left || 0}本</div>
+                    <div style="font-size: 0.65rem; color: #64748b;">(${calcOaPct(oa.left || 0)}%)</div>
+                </div>
+                <div style="background: white; padding: 6px 2px; border-radius: 8px; border: 1px solid #dbeafe;">
+                    <div style="color: #2563eb;">レフトセミ</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #1e4ed8; margin-top: 2px;">${oa.leftSemi || 0}本</div>
+                    <div style="font-size: 0.65rem; color: #64748b;">(${calcOaPct(oa.leftSemi || 0)}%)</div>
+                </div>
+                <div style="background: white; padding: 6px 2px; border-radius: 8px; border: 1px solid #dbeafe;">
+                    <div style="color: #059669;">速攻</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #065f46; margin-top: 2px;">${oa.quick || 0}本</div>
+                    <div style="font-size: 0.65rem; color: #64748b;">(${calcOaPct(oa.quick || 0)}%)</div>
+                </div>
+                <div style="background: white; padding: 6px 2px; border-radius: 8px; border: 1px solid #dbeafe;">
+                    <div style="color: #d97706;">ライトセミ</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #92400e; margin-top: 2px;">${oa.rightSemi || 0}本</div>
+                    <div style="font-size: 0.65rem; color: #64748b;">(${calcOaPct(oa.rightSemi || 0)}%)</div>
+                </div>
+                <div style="background: white; padding: 6px 2px; border-radius: 8px; border: 1px solid #dbeafe;">
+                    <div style="color: #d97706;">ライト</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #92400e; margin-top: 2px;">${oa.right || 0}本</div>
+                    <div style="font-size: 0.65rem; color: #64748b;">(${calcOaPct(oa.right || 0)}%)</div>
+                </div>
+                <div style="background: white; padding: 6px 2px; border-radius: 8px; border: 1px solid #dbeafe;">
+                    <div style="color: #7c3aed;">2アタック</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #5b21b6; margin-top: 2px;">${oa.twoAttack || 0}本</div>
+                    <div style="font-size: 0.65rem; color: #64748b;">(${calcOaPct(oa.twoAttack || 0)}%)</div>
                 </div>
             </div>
         `;
@@ -3164,12 +3522,11 @@ function applyRolePermissions() {
     }
 
     async function addPlayer() {
-        if (document.activeElement) {
-            document.activeElement.blur();
-        }
+        if (document.activeElement) document.activeElement.blur();
 
         const num = document.getElementById('p-number').value;
         const name = document.getElementById('p-name').value;
+        const loginId = document.getElementById('p-login-id').value.trim(); // ★追加
         const height = document.getElementById('p-height').value;
         const condition = document.getElementById('p-condition').value;
         const pos = document.getElementById('p-position').value;
@@ -3179,13 +3536,18 @@ function applyRolePermissions() {
         const fileInput = document.getElementById('p-image');
 
         if (!validatePlayerInput(num, name, height, null, pos)) return;
+        if (!loginId) {
+            alert("ログイン用IDを入力してください。");
+            return;
+        }
 
         const photoDataDataUrl = await readImageFile(fileInput);
 
         players.push({
             id: Date.now(),
             number: String(Number(num)),
-            name: name.trim(),
+            name: name.trim(), // 表示名（例: なおき）
+            loginId: loginId.toLowerCase(), // ログイン用ID（例: naoki）
             height: height || '-',
             condition: condition || '普通',
             position: pos,
@@ -3197,18 +3559,16 @@ function applyRolePermissions() {
 
         document.getElementById('p-number').value = '';
         document.getElementById('p-name').value = '';
+        document.getElementById('p-login-id').value = ''; // ★追加
         document.getElementById('p-height').value = '';
         document.getElementById('p-memo').value = '';
         fileInput.value = '';
         
         saveStorage();
         render();
-
         updatePlayerPosSelects('p-', ['レフト', 'なし', 'なし']);
 
-        if (window.innerWidth < 900) {
-            switchTab('tab-list');
-        }
+        if (window.innerWidth < 900) switchTab('tab-list');
     }
 
     function openEditModal(id) {
@@ -3218,17 +3578,14 @@ function applyRolePermissions() {
         document.getElementById('edit-id').value = player.id;
         document.getElementById('edit-number').value = player.number;
         document.getElementById('edit-name').value = player.name;
+        document.getElementById('edit-login-id').value = player.loginId || ''; // ★追加
         document.getElementById('edit-height').value = player.height !== '-' ? player.height : '';
         document.getElementById('edit-condition').value = player.condition || '普通';
         document.getElementById('edit-memo').value = player.memo || '';
         document.getElementById('edit-image').value = '';
 
         const subs = player.subPositions || [];
-        const posValues = [
-            player.position,
-            subs[0] || 'なし',
-            subs[1] || 'なし'
-        ];
+        const posValues = [player.position, subs[0] || 'なし', subs[1] || 'なし'];
 
         updatePlayerPosSelects('edit-', posValues);
         document.getElementById('edit-modal').style.display = 'flex';
@@ -3522,9 +3879,7 @@ function applyRolePermissions() {
     }
 
     async function updatePlayer() {
-        if (document.activeElement) {
-            document.activeElement.blur();
-        }
+        if (document.activeElement) document.activeElement.blur();
 
         const id = document.getElementById('edit-id').value;
         const player = players.find(p => String(p.id) === String(id));
@@ -3532,6 +3887,7 @@ function applyRolePermissions() {
         if (player) {
             const num = document.getElementById('edit-number').value;
             const name = document.getElementById('edit-name').value;
+            const loginId = document.getElementById('edit-login-id').value.trim(); // ★追加
             const height = document.getElementById('edit-height').value;
             const condition = document.getElementById('edit-condition').value;
             const memo = document.getElementById('edit-memo').value;
@@ -3539,14 +3895,17 @@ function applyRolePermissions() {
             const pos = document.getElementById('edit-position').value;
 
             if (!validatePlayerInput(num, name, height, id, pos)) return;
+            if (!loginId) {
+                alert("ログイン用IDを入力してください。");
+                return;
+            }
 
             const newPhoto = await readImageFile(fileInput);
-            if (newPhoto) {
-                player.photo = newPhoto;
-            }
+            if (newPhoto) player.photo = newPhoto;
 
             player.number = String(Number(num));
             player.name = name.trim();
+            player.loginId = loginId.toLowerCase(); // ★追加
             player.height = height || '-';
             player.condition = condition;
             player.position = pos;
