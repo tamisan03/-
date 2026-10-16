@@ -881,7 +881,7 @@ body.user-mode .reset-photo-btn {
         <form onsubmit="handleLoginSubmit(event)">
             <input type="text" name="username" value="team_user" style="display:none;" autocomplete="username">
             <div class="form-group" style="margin-bottom: 12px;">
-                <input type="password" id="input-app-password" placeholder="例: naoki_seinan2026" autocomplete="current-password" required style="text-align:center; font-size:0.95rem; padding:12px;">
+                <input type="password" id="input-app-password" placeholder="例: 氏名頭文字_パスワード" autocomplete="current-password" required style="text-align:center; font-size:0.95rem; padding:12px;">
             </div>
             
             <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
@@ -1589,7 +1589,7 @@ body.user-mode .reset-photo-btn {
 
         // ★ 名前（ID）が入力されていない場合は管理者も含めて一律でログイン拒否
         if (!userNameInput || userNameInput.trim() === '') {
-            alert("ログインには名前（ID）が必要です。\n「名前_パスワード」の形式で入力してください。\n例: naoki_パスワード ");
+            alert("ログインには名前（ID）が必要です。\n「氏名頭文字_パスワード」の形式で入力してください。\n例: st_パスワード ");
             passInput.focus();
             return;
         }
