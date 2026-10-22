@@ -378,6 +378,8 @@
 
         th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
         th { background: #f1f5f9; color: #475569; position: sticky; top: 0; z-index: 2; }
+        th.sortable { cursor: pointer; user-select: none; }
+        th.sortable:hover { background: #e2e8f0; }
         
         .list-photo { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); vertical-align: middle; margin-right: 6px; cursor: pointer; }
 
@@ -915,6 +917,7 @@
     <div class="tab-nav">
         <button class="tab-btn active" onclick="switchTab('tab-register')">選手登録</button>
         <button class="tab-btn" id="btn-tab-my-stats" onclick="switchTab('tab-my-stats')">マイ成績</button>
+        <button class="tab-btn" id="btn-tab-team-stats" onclick="switchTab('tab-team-stats')">全体成績</button>
         <button class="tab-btn" onclick="switchTab('tab-list')">選手一覧</button>
         <button class="tab-btn" onclick="switchTab('tab-court')">戦術</button>
         <button class="tab-btn" onclick="switchTab('tab-flick')">記録</button>
@@ -981,6 +984,30 @@
         <div class="card tab-card" id="tab-my-stats">
             <div id="my-stats-container">
                 <!-- JSで動的にログインユーザーの生涯成績を描画 -->
+            </div>
+        </div>
+
+        <!-- タブ2.5：チーム成績（全員の生涯成績比較） -->
+        <div class="card tab-card" id="tab-team-stats">
+            <h2>全選手の生涯通算成績</h2>
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:12px;">
+                ※チーム全員の通算成績です。各項目名をタップすると並び順を変更できます。
+            </div>
+            <div class="table-wrapper">
+                <table id="team-stats-table">
+                    <thead>
+                        <tr>
+                            <th>背番号</th>
+                            <th>名前</th>
+                            <th class="sortable" onclick="sortTeamStatsTable('spike')">スパイク(決定率) <span id="sort-team-icon-spike"></span></th>
+                            <th class="sortable" onclick="sortTeamStatsTable('serve')">有効サーブ率 <span id="sort-team-icon-serve"></span></th>
+                            <th class="sortable" onclick="sortTeamStatsTable('block')">ブロック <span id="sort-team-icon-block"></span></th>
+                            <th class="sortable" onclick="sortTeamStatsTable('reception')">レセプション <span id="sort-team-icon-reception"></span></th>
+                            <th>その他ミス</th>
+                        </tr>
+                    </thead>
+                    <tbody id="team-stats-list"></tbody>
+                </table>
             </div>
         </div>
 
@@ -1219,10 +1246,10 @@
                             <tr>
                                 <th>背番号</th>
                                 <th>名前</th>
-                                <th>スパイク(決定率)</th>
-                                <th>有効サーブ率</th>
-                                <th>ブロック</th>
-                                <th>レセプション</th>
+                                <th class="sortable" onclick="sortHistoryPlayerTable('spike')">スパイク(決定率) <span id="sort-icon-spike"></span></th>
+                                <th class="sortable" onclick="sortHistoryPlayerTable('serve')">有効サーブ率 <span id="sort-icon-serve"></span></th>
+                                <th class="sortable" onclick="sortHistoryPlayerTable('block')">ブロック <span id="sort-icon-block"></span></th>
+                                <th class="sortable" onclick="sortHistoryPlayerTable('reception')">レセプション <span id="sort-icon-reception"></span></th>
                                 <th>その他ミス</th>
                                 <th>操作</th>
                             </tr>
@@ -1606,14 +1633,12 @@
         if (rawInput.endsWith(ADMIN_PASSWORD)) {
             isAdmin = true;
             inputPass = ADMIN_PASSWORD;
-            // パスワード直前のアンダースコアまたは文字列全体からユーザーIDを取得
             userNameInput = rawInput.slice(0, -ADMIN_PASSWORD.length).replace(/_$/, '');
         } else if (rawInput.endsWith(USER_PASSWORD)) {
             isAdmin = false;
             inputPass = USER_PASSWORD;
             userNameInput = rawInput.slice(0, -USER_PASSWORD.length).replace(/_$/, '');
         } else {
-            // 区切り文字 '_' で分割（従来通りの判定用）
             const lastUnderscoreIdx = rawInput.lastIndexOf('_');
             if (lastUnderscoreIdx !== -1) {
                 userNameInput = rawInput.substring(0, lastUnderscoreIdx);
@@ -1632,26 +1657,18 @@
 
         const cleanInputId = userNameInput.trim().toLowerCase();
 
-        // Firestoreからの最新データ同期確認
+        // 🔍 PWA対策: メモリ・LocalStorage・Firestoreから選手データを確実にロード
         if (!players || players.length === 0) {
-            if (window.db && window.firestoreTools) {
-                try {
-                    const { doc, onSnapshot } = window.firestoreTools;
-                    const snapshot = await new Promise((resolve) => {
-                        const timer = setTimeout(() => resolve(null), 3000);
-                        const unsub = onSnapshot(doc(window.db, "teams", "seinan_data"), (snap) => {
-                            clearTimeout(timer);
-                            try { unsub(); } catch(e){}
-                            resolve(snap);
-                        });
-                    });
+            const localSaved = localStorage.getItem('vball9_players');
+            if (localSaved) {
+                try { players = JSON.parse(localSaved); } catch(e){}
+            }
 
-                    if (snapshot && snapshot.exists()) {
-                        const data = snapshot.data();
-                        if (data.players) players = data.players;
-                    }
-                } catch (err) {
-                    console.error("Firestoreデータ取得エラー: ", err);
+            if (!players || players.length === 0) {
+                const cloudData = await fetchFirestoreDoc();
+                if (cloudData && cloudData.players && cloudData.players.length > 0) {
+                    players = cloudData.players;
+                    localStorage.setItem('vball9_players', JSON.stringify(players));
                 }
             }
         }
@@ -1664,14 +1681,28 @@
                 return;
             }
 
-            const matchedPlayer = (players || []).find(p => {
+            let matchedPlayer = (players || []).find(p => {
                 const playerLoginId = (p.loginId || '').trim().toLowerCase();
                 const playerName = (p.name || '').trim().toLowerCase();
                 return playerLoginId === cleanInputId || playerName === cleanInputId;
             });
 
+            // 万が一データ未同期でマッチしない場合、もう一度Firestoreを強制再読み込みして最終確認
             if (!matchedPlayer) {
-                const registeredIds = players.map(p => p.loginId || p.name).join(", ");
+                const retryData = await fetchFirestoreDoc();
+                if (retryData && retryData.players) {
+                    players = retryData.players;
+                    localStorage.setItem('vball9_players', JSON.stringify(players));
+                    matchedPlayer = (players || []).find(p => {
+                        const playerLoginId = (p.loginId || '').trim().toLowerCase();
+                        const playerName = (p.name || '').trim().toLowerCase();
+                        return playerLoginId === cleanInputId || playerName === cleanInputId;
+                    });
+                }
+            }
+
+            if (!matchedPlayer) {
+                const registeredIds = (players || []).map(p => p.loginId || p.name).join(", ");
                 alert(`【選手不一致】\n入力ID: 「${cleanInputId}」\n登録済みリスト(${players.length}名): [${registeredIds}]`);
                 passInput.focus();
                 return;
@@ -1724,21 +1755,7 @@
         if (!isAdmin) switchTab('tab-my-stats');
         else switchTab('tab-register');
 
-        showToast(`${loginUserName}さん（管理者）としてログインしました`);
-    }
-
-    // 画面上にログイン中ユーザー名を表示する関数
-    function updateLoginUserInfoDisplay() {
-        let infoEl = document.getElementById('user-info-display');
-        if (!infoEl) {
-            const container = document.querySelector('.container') || document.body;
-            infoEl = document.createElement('div');
-            infoEl.id = 'user-info-display';
-            infoEl.style.cssText = 'text-align: right; font-size: 0.85rem; font-weight: bold; color: #475569; margin-top: 0; margin-bottom: 8px; padding-right: 4px;';
-            container.insertBefore(infoEl, container.firstChild);
-        }
-        const roleLabel = isAdmin ? "管理者" : "一般";
-        infoEl.innerHTML = `👤 ログイン中: <span style="color:#2563eb;">${loginUserName || "ゲスト"}</span> (${roleLabel})`;
+        showToast(`${loginUserName}さんとしてログインしました`);
     }
 
     async function initAppAuth() {
@@ -1762,45 +1779,27 @@
             rememberCheck.checked = false;
         }
 
-        // ★ PWA強力対策: Firestoreから「確実に初回データを取得するまで」待機する
-        if (window.db && window.firestoreTools) {
-            try {
-                const { doc, onSnapshot } = window.firestoreTools;
-                
-                await new Promise((resolve) => {
-                    // 5秒のタイムアウトを設定
-                    const timeout = setTimeout(() => {
-                        console.warn("Firestore通信タイムアウト");
-                        resolve();
-                    }, 5000);
+        // ★ PWA対策: ローカルキャッシュを即時反映しつつクラウド同期
+        const localPlayers = localStorage.getItem('vball9_players');
+        if (localPlayers) {
+            try { players = JSON.parse(localPlayers); } catch(e){}
+        }
 
-                    const unsub = onSnapshot(doc(window.db, "teams", "seinan_data"), (snapshot) => {
-                        clearTimeout(timeout);
-                        if (snapshot && snapshot.exists()) {
-                            const data = snapshot.data();
-                            if (data.players && data.players.length > 0) {
-                                players = data.players;
-                                localStorage.setItem('vball9_players', JSON.stringify(players));
-                            }
-                            if (data.starters) starters = data.starters;
-                            if (data.pinPositions) pinPositions = data.pinPositions;
-                            if (data.ballPosition) ballPosition = data.ballPosition;
-                            if (data.flickStarters) flickStarters = data.flickStarters;
-                            if (data.savedMatches) savedMatches = data.savedMatches;
-                            if (data.teamIssues) teamIssues = data.teamIssues;
-                            if (data.teamFinances) teamFinances = data.teamFinances;
-                            if (data.savedTactics) savedTactics = data.savedTactics;
-                        }
-                        try { unsub(); } catch(e){}
-                        resolve();
-                    }, (error) => {
-                        console.error("初回読み込みエラー:", error);
-                        clearTimeout(timeout);
-                        resolve();
-                    });
-                });
-            } catch (err) {
-                console.error("Firestore接続エラー:", err);
+        if (window.db && window.firestoreTools) {
+            const cloudData = await fetchFirestoreDoc();
+            if (cloudData) {
+                if (cloudData.players && cloudData.players.length > 0) {
+                    players = cloudData.players;
+                    localStorage.setItem('vball9_players', JSON.stringify(players));
+                }
+                if (cloudData.starters) starters = cloudData.starters;
+                if (cloudData.pinPositions) pinPositions = cloudData.pinPositions;
+                if (cloudData.ballPosition) ballPosition = cloudData.ballPosition;
+                if (cloudData.flickStarters) flickStarters = cloudData.flickStarters;
+                if (cloudData.savedMatches) savedMatches = cloudData.savedMatches;
+                if (cloudData.teamIssues) teamIssues = cloudData.teamIssues;
+                if (cloudData.teamFinances) teamFinances = cloudData.teamFinances;
+                if (cloudData.savedTactics) savedTactics = cloudData.savedTactics;
             }
         }
 
@@ -1853,6 +1852,10 @@
     let currentSelectedMatchId = null;
     let currentSelectedMatchGroupKey = null;
     let currentSelectedFinanceYear = null;
+    let currentTeamSortKey = null;   // 追加
+    let currentTeamSortOrder = 'desc'; // 追加
+    let currentSortKey = null;   // 追加: 'spike' | 'serve' | 'block' | 'reception'
+    let currentSortOrder = 'desc'; // 追加: 'asc' | 'desc'
     let currentLostPoints = JSON.parse(localStorage.getItem('vball9_current_lost_points')) || {
         opponentSpike: 0,
         opponentFeint: 0,
@@ -1929,6 +1932,37 @@
     }
     let isRemoteUpdate = false;
 
+    function sortHistoryPlayerTable(key) {
+        if (currentSortKey === key) {
+            currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortKey = key;
+            currentSortOrder = 'desc';
+        }
+        updateSortIcons();
+
+        if (currentSelectedMatchId) {
+            const match = savedMatches.find(m => m.id == currentSelectedMatchId) || 
+                        (currentSelectedMatchId.startsWith('combined_') ? window.lastCombinedMatch : null);
+            if (match) {
+                renderMatchPlayerTable(match);
+            }
+        }
+    }
+
+    function updateSortIcons() {
+        ['spike', 'serve', 'block', 'reception'].forEach(key => {
+            const iconEl = document.getElementById(`sort-icon-${key}`);
+            if (iconEl) {
+                if (currentSortKey === key) {
+                    iconEl.textContent = currentSortOrder === 'asc' ? '▲' : '▼';
+                } else {
+                    iconEl.textContent = '';
+                }
+            }
+        });
+    }
+
     function switchTab(tabId) {
         if (!isAdmin && (tabId === 'tab-register' || tabId === 'tab-flick' || tabId === 'tab-finance')) {
             alert("この機能は管理者のみ利用可能です。");
@@ -1943,12 +1977,13 @@
         const indexMap = { 
             'tab-register': 0, 
             'tab-my-stats': 1, 
-            'tab-list': 2, 
-            'tab-court': 3, 
-            'tab-flick': 4, 
-            'tab-history': 5, 
-            'tab-issues': 6, 
-            'tab-finance': 7 
+            'tab-team-stats': 2, // ★追加
+            'tab-list': 3,        // ★番号をインクリメント
+            'tab-court': 4, 
+            'tab-flick': 5, 
+            'tab-history': 6, 
+            'tab-issues': 7, 
+            'tab-finance': 8
         };
         if (indexMap[tabId] !== undefined) {
             document.querySelectorAll('.tab-btn')[indexMap[tabId]].classList.add('active');
@@ -1956,6 +1991,8 @@
 
         if (tabId === 'tab-my-stats') {
             renderMyStats();
+        } else if (tabId === 'tab-team-stats') {
+            renderTeamStats(); // 追加
         } else if (tabId === 'tab-flick') {
             renderFlickCourt();
             renderFlickStartersUI();
@@ -2067,6 +2104,145 @@
         `;
     }
 
+    function renderTeamStats() {
+        const listEl = document.getElementById('team-stats-list');
+        if (!listEl) return;
+        listEl.innerHTML = '';
+
+        if (!players || players.length === 0) {
+            listEl.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:20px;">選手が登録されていません</td></tr>';
+            return;
+        }
+
+        // 各選手の生涯通算成績を取得して配列を作成
+        let pList = players.map(p => {
+            const combinedStats = getCombinedPlayerStats(p.id);
+            return {
+                player: p,
+                stats: combinedStats
+            };
+        });
+
+        // ソート適用
+        if (currentTeamSortKey) {
+            pList.sort((a, b) => {
+                const stA = a.stats;
+                const stB = b.stats;
+                let valA = 0, valB = 0;
+
+                if (currentTeamSortKey === 'spike') {
+                    const totA = stA.spike.success + stA.spike.continue + stA.spike.error;
+                    const totB = stB.spike.success + stB.spike.continue + stB.spike.error;
+                    valA = totA > 0 ? stA.spike.success / totA : -1;
+                    valB = totB > 0 ? stB.spike.success / totB : -1;
+                } else if (currentTeamSortKey === 'serve') {
+                    const totA = stA.serve.success + stA.serve.continue + stA.serve.error;
+                    const totB = stB.serve.success + stB.serve.continue + stB.serve.error;
+                    valA = totA > 0 ? stA.serve.success / totA : -1;
+                    valB = totB > 0 ? stB.serve.success / totB : -1;
+                } else if (currentTeamSortKey === 'block') {
+                    valA = stA.block.success || 0;
+                    valB = stB.block.success || 0;
+                } else if (currentTeamSortKey === 'reception') {
+                    const totA = stA.reception.success + stA.reception.continue + stA.reception.error;
+                    const totB = stB.reception.success + stB.reception.continue + stB.reception.error;
+                    valA = totA > 0 ? stA.reception.success / totA : -1;
+                    valB = totB > 0 ? stB.reception.success / totB : -1;
+                }
+
+                if (currentTeamSortOrder === 'asc') return valA - valB;
+                return valB - valA;
+            });
+        } else {
+            // デフォルトは背番号順
+            pList.sort((a, b) => Number(a.player.number) - Number(b.player.number));
+        }
+
+        pList.forEach(item => {
+            const p = item.player;
+            const st = item.stats;
+            const photoImg = p.photo ? `<img src="${p.photo}" class="list-photo" draggable="false">` : '';
+
+            const tr = document.createElement('tr');
+
+            // --- 過去戦績と同様の色分け判定処理 ---
+            // 1. スパイク判定 (決定率: 20%以下は赤、35%以上は緑)
+            const spikeTotal = st.spike.success + st.spike.continue + st.spike.error;
+            const spikePctNum = spikeTotal > 0 ? (st.spike.success / spikeTotal) * 100 : 0;
+            const spikeRateStr = calcRate(st.spike.success, spikeTotal);
+            let spikeClass = "";
+            if (spikeTotal > 0) {
+                if (spikePctNum <= 20) spikeClass = "cell-warn";
+                else if (spikePctNum >= 35) spikeClass = "cell-nice";
+            }
+
+            // 2. サーブ判定 (有効率: 30%未満は赤、60%超は緑)
+            const serveTotal = st.serve.success + st.serve.continue + st.serve.error;
+            const serveEffective = st.serve.success || 0;
+            const serveEffectiveRateStr = calcRate(serveEffective, serveTotal);
+            const servePctNum = serveTotal > 0 ? (serveEffective / serveTotal) * 100 : 0;
+            let serveClass = "";
+            if (serveTotal > 0) {
+                if (servePctNum > 60) serveClass = "cell-nice";
+                else if (servePctNum <= 30) serveClass = "cell-warn";
+            }
+
+            // 3. ブロック判定 
+            let blockClass = "";
+
+            // 4. レセプション判定 (A.Bパス率: 50%以下は赤、65%以上は緑)
+            const recTotal = st.reception.success + st.reception.continue + st.reception.error;
+            const recPctNum = recTotal > 0 ? (st.reception.success / recTotal) * 100 : 0;
+            const recRateStr = calcRate(st.reception.success, recTotal);
+            let recClass = "";
+            if (recTotal > 0) {
+                if (recPctNum <= 50) recClass = "cell-warn";
+                else if (recPctNum >= 65) recClass = "cell-nice";
+            }
+
+            // 5. その他ミス判定 
+            const otherErr = st.otherError || 0;
+            let otherErrClass = "";
+
+            tr.innerHTML = `
+                <td><b>${p.number}</b></td>
+                <td>
+                    ${photoImg}
+                    <span class="clickable-player-name" onclick="openInfoModal(players.find(pl => String(pl.id) === String('${p.id}')), true)">${p.name}</span>
+                </td>
+                <td class="${spikeClass}"><b>${spikeRateStr}</b><br><span style="font-size:0.65rem;">(${st.spike.success}/${spikeTotal})</span></td>
+                <td class="${serveClass}"><b>${serveEffectiveRateStr}</b><br><span style="font-size:0.65rem;">(${serveEffective}/${serveTotal})</span></td>
+                <td class="${blockClass}"><b>${st.block.success}本</b><br><span style="font-size:0.65rem;">(ワン:${st.block.continue})</span></td>
+                <td class="${recClass}"><b>${recRateStr}</b><br><span style="font-size:0.65rem;">(${st.reception.success}/${recTotal})</span></td>
+                <td class="${otherErrClass}"><b>${otherErr}本</b></td>
+            `;
+            listEl.appendChild(tr);
+        });
+    }
+
+    function sortTeamStatsTable(key) {
+        if (currentTeamSortKey === key) {
+            currentTeamSortOrder = currentTeamSortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentTeamSortKey = key;
+            currentTeamSortOrder = 'desc';
+        }
+        updateTeamSortIcons();
+        renderTeamStats();
+    }
+
+    function updateTeamSortIcons() {
+        ['spike', 'serve', 'block', 'reception'].forEach(key => {
+            const iconEl = document.getElementById(`sort-team-icon-${key}`);
+            if (iconEl) {
+                if (currentTeamSortKey === key) {
+                    iconEl.textContent = currentTeamSortOrder === 'asc' ? '▲' : '▼';
+                } else {
+                    iconEl.textContent = '';
+                }
+            }
+        });
+    }
     async function saveStorage() {
         localStorage.setItem('vball9_players', JSON.stringify(players));
         localStorage.setItem('vball9_starters', JSON.stringify(starters));
@@ -2630,6 +2806,7 @@
 
         combinedMatch.playersData = Object.values(playerMap);
         currentSelectedMatchId = combinedMatch.id;
+        window.lastCombinedMatch = combinedMatch; // 追加
 
         renderSavedMatchesSelect();
         renderMatchPlayerTable(combinedMatch);
@@ -2865,6 +3042,39 @@
             }
         }
 
+        // ソート適用（配列のシャローコピーを作成してソート）
+        activePlayersData = [...activePlayersData];
+        if (currentSortKey) {
+            activePlayersData.sort((a, b) => {
+                const stA = a.stats || initStatsObj();
+                const stB = b.stats || initStatsObj();
+                let valA = 0, valB = 0;
+
+                if (currentSortKey === 'spike') {
+                    const totA = stA.spike.success + stA.spike.continue + stA.spike.error;
+                    const totB = stB.spike.success + stB.spike.continue + stB.spike.error;
+                    valA = totA > 0 ? stA.spike.success / totA : -1;
+                    valB = totB > 0 ? stB.spike.success / totB : -1;
+                } else if (currentSortKey === 'serve') {
+                    const totA = stA.serve.success + stA.serve.continue + stA.serve.error;
+                    const totB = stB.serve.success + stB.serve.continue + stB.serve.error;
+                    valA = totA > 0 ? stA.serve.success / totA : -1;
+                    valB = totB > 0 ? stB.serve.success / totB : -1;
+                } else if (currentSortKey === 'block') {
+                    valA = stA.block.success || 0;
+                    valB = stB.block.success || 0;
+                } else if (currentSortKey === 'reception') {
+                    const totA = stA.reception.success + stA.reception.continue + stA.reception.error;
+                    const totB = stB.reception.success + stB.reception.continue + stB.reception.error;
+                    valA = totA > 0 ? stA.reception.success / totA : -1;
+                    valB = totB > 0 ? stB.reception.success / totB : -1;
+                }
+
+                if (currentSortOrder === 'asc') return valA - valB;
+                return valB - valA;
+            });
+        }
+
         // 1. チーム全体スタッツを描画
         renderTeamSummary(match.playersData, 'history-team-summary', '📊 チーム全体スタッツ（この試合）');
 
@@ -2981,7 +3191,7 @@
                 let serveClass = "";
                 if (serveTotal > 0) {
                     if (servePctNum > 60) serveClass = "cell-nice";
-                    else if (servePctNum < 20) serveClass = "cell-warn";
+                    else if (servePctNum <= 30) serveClass = "cell-warn";
                 }
 
                 let blockClass = (st.block.success >= 3) ? "cell-nice" : "";
@@ -3548,7 +3758,7 @@
 
         if (totalServeAll >= 10) {
             const serveRate = (totalServeEff / totalServeAll) * 100;
-            if (serveRate < 25) {
+            if (serveRate <= 30) {
                 autoWeaknesses.push(`チーム全体の通算有効サーブ率が <b>${serveRate.toFixed(1)}%</b> です。相手の陣形を崩す攻めるサーブのコントロール向上が必要です。`);
             }
         }
@@ -3837,7 +4047,7 @@
             const spikeRate = (st.spike.success / spikeTotal) * 100;
             const spikeErrRate = (st.spike.error / spikeTotal) * 100;
 
-            if (spikeRate >= 50) {
+            if (spikeRate >= 40) {
                 strengths.push("アタック決定率が高く、チームの決定力・主得点源として機能しています。");
             } else if (spikeRate <= 25) {
                 weaknesses.push("アタック決定率の向上が課題です。ブロックを利用したリバウンドやコースの打ち分けを意識しましょう。");
@@ -3853,7 +4063,7 @@
             const recRate = (st.reception.success / recTotal) * 100;
             const recErrRate = (st.reception.error / recTotal) * 100;
 
-            if (recRate >= 80) {
+            if (recRate >= 70) {
                 strengths.push("レセプション返球率（A.Bパス率）が非常に高く、安定した攻撃展開を支えています。");
             } else if (recRate <= 50) {
                 weaknesses.push("レセプションの返球精度が課題です。正面での面作りとファーストタッチの落下地点への素早い入りを徹底しましょう。");
@@ -3885,7 +4095,7 @@
             strengths.push("相手アタッカーへの圧迫感があり、ブロック得点で直接相手の流れを断ち切れています。");
         }
 
-        if (st.otherError >= 3) {
+        if (st.otherError >= 2) {
             weaknesses.push("その他の失点・ミス（ドリブル・タッチネット・コンビミス等）が散見されます。プレイの正確性と連携を高めましょう。");
         }
 
