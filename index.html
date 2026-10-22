@@ -1786,32 +1786,46 @@
             rememberCheck.checked = false;
         }
 
-        // ★ PWA対策: ローカルキャッシュを即時反映しつつクラウド同期
+        // 1. ローカルキャッシュを仮読み込み（即時表示用）
         const localPlayers = localStorage.getItem('vball9_players');
         if (localPlayers) {
             try { players = JSON.parse(localPlayers); } catch(e){}
         }
+        const localTactics = localStorage.getItem('vball9_saved_tactics');
+        if (localTactics) {
+            try { savedTactics = JSON.parse(localTactics); } catch(e){}
+        }
 
+        // 2. クラウド（Firestore）からの最新データ取得を確実に待機
         if (window.db && window.firestoreTools) {
-            const cloudData = await fetchFirestoreDoc();
-            if (cloudData) {
-                if (cloudData.players && cloudData.players.length > 0) {
-                    players = cloudData.players;
+            try {
+                const cloudData = await fetchFirestoreDoc();
+                if (cloudData) {
+                    if (cloudData.players) players = cloudData.players;
+                    if (cloudData.starters) starters = cloudData.starters;
+                    if (cloudData.pinPositions) pinPositions = data.pinPositions;
+                    if (cloudData.ballPosition) ballPosition = data.ballPosition;
+                    if (cloudData.flickStarters) flickStarters = cloudData.flickStarters;
+                    if (cloudData.savedMatches) savedMatches = cloudData.savedMatches;
+                    if (cloudData.teamIssues) teamIssues = cloudData.teamIssues;
+                    if (cloudData.teamFinances) teamFinances = cloudData.teamFinances;
+                    if (cloudData.savedTactics) savedTactics = cloudData.savedTactics;
+
+                    // ローカルキャッシュも同期更新
                     localStorage.setItem('vball9_players', JSON.stringify(players));
+                    localStorage.setItem('vball9_saved_tactics', JSON.stringify(savedTactics));
                 }
-                if (cloudData.starters) starters = cloudData.starters;
-                if (cloudData.pinPositions) pinPositions = cloudData.pinPositions;
-                if (cloudData.ballPosition) ballPosition = cloudData.ballPosition;
-                if (cloudData.flickStarters) flickStarters = cloudData.flickStarters;
-                if (cloudData.savedMatches) savedMatches = cloudData.savedMatches;
-                if (cloudData.teamIssues) teamIssues = cloudData.teamIssues;
-                if (cloudData.teamFinances) teamFinances = cloudData.teamFinances;
-                if (cloudData.savedTactics) savedTactics = cloudData.savedTactics;
+            } catch(e) {
+                console.error("初期データ取得エラー:", e);
             }
         }
 
-        // データの同期完了後にログインモーダルを表示
-        document.getElementById('login-modal-overlay').style.display = 'flex';
+        // 3. データ確定後に再描画を実行
+        render();
+
+        // ログインモーダルを表示
+        const modalOverlay = document.getElementById('login-modal-overlay');
+        if (modalOverlay) modalOverlay.style.display = 'flex';
     }
 
     const POSITIONS = [
@@ -2314,54 +2328,26 @@
                 
                 isRemoteUpdate = true;
 
-                if (data.players) players = data.players;
+                if (data.players) {
+                    players = data.players;
+                    localStorage.setItem('vball9_players', JSON.stringify(players));
+                }
                 if (data.starters) starters = data.starters;
                 if (data.flickStarters) flickStarters = data.flickStarters;
                 if (data.savedMatches) savedMatches = data.savedMatches;
                 if (data.teamIssues) teamIssues = data.teamIssues;
                 if (data.teamFinances) teamFinances = data.teamFinances;
                 
-                // 裏データとしてピン位置・ボール位置を更新（画面描画は行わない）
-                if (data.pinPositions) pinPositions = data.pinPositions;
-                if (data.ballPosition) ballPosition = data.ballPosition;
-
-                // 戦術一覧リストのみバックグラウンドで最新化
                 if (data.savedTactics) {
                     savedTactics = data.savedTactics;
                     localStorage.setItem('vball9_saved_tactics', JSON.stringify(savedTactics));
-                    renderTacticsSelect();
                 }
 
-                // ★ 作戦ボード(renderCourt)は実行せず、他の表示領域のみ更新
-                renderStartersUI();
-                renderFlickStartersUI();
-                renderSavedMatchesSelect();
-                renderFinanceYearsSelect();
-                
-                // 選手一覧テーブルのみ更新
-                const listEl = document.getElementById('player-list');
-                if (listEl) {
-                    listEl.innerHTML = '';
-                    players.sort((a, b) => Number(a.number) - Number(b.number)).forEach(p => {
-                        if (!p.stats) p.stats = initStatsObj();
-                        const tr = document.createElement('tr');
-                        const subBadges = (p.subPositions && p.subPositions.length > 0)
-                            ? p.subPositions.map(sp => `<span class="badge badge-sub">${sp}</span>`).join('')
-                            : '';
-                        const heightStr = p.height !== '-' ? `${p.height}cm` : '-';
-                        tr.innerHTML = `
-                            <td><b>${p.number}</b></td>
-                            <td><span class="clickable-player-name" onclick="openInfoModal(players.find(pl => String(pl.id) === String('${p.id}')), true)">${p.name}</span></td>
-                            <td>${heightStr}</td>
-                            <td><span class="badge">${p.position}</span><br>${subBadges}</td>
-                            <td><div class="btn-group"><button class="btn-edit" onclick="openEditModal('${p.id}')">編集</button><button class="btn-del" onclick="deletePlayer('${p.id}')">削除</button></div></td>
-                        `;
-                        listEl.appendChild(tr);
-                    });
-                }
+                // ★データ受信時に画面UI（選手一覧・各種UI）を確実に更新
+                render();
                 
                 isRemoteUpdate = false;
-                console.log("クラウド(Firestore)から最新データを受け取りました");
+                console.log("クラウド(Firestore)から最新データを受け取り再描画しました");
             }
         }, (error) => {
             console.error("Firestore受信エラー:", error);
