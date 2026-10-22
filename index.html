@@ -1750,7 +1750,14 @@
         setupFirestoreSync();
         applyRolePermissions();
         updateLoginUserInfoDisplay();
+
+        // ★追加: 初回ログイン時は新規作成モード（デフォルト配置）として初期化
+        pinPositions = JSON.parse(JSON.stringify(DEFAULT_POSITIONS));
+        ballPosition = { x: 50, y: 50 };
+        isLoadedTacticsActive = false;
+
         render();
+        renderCourt();
 
         if (!isAdmin) switchTab('tab-my-stats');
         else switchTab('tab-register');
@@ -1833,9 +1840,9 @@
     };
 
     const DEFAULT_POSITIONS = [
-        { x: 20, y: 60 }, { x: 50, y: 60 }, { x: 80, y: 60 },
-        { x: 20, y: 75 }, { x: 50, y: 75 }, { x: 80, y: 75 },
-        { x: 20, y: 90 }, { x: 50, y: 90 }, { x: 80, y: 90 }
+        { x: 11, y: 60 }, { x: 27, y: 60 }, { x: 43, y: 60 },
+        { x: 59, y: 60 }, { x: 75, y: 60 }, { x: 91, y: 60 },
+        { x: 11, y: 85 }, { x: 50, y: 90 }, { x: 91, y: 85 }
     ];
 
     let players = JSON.parse(localStorage.getItem('vball9_players')) || [];
@@ -1843,6 +1850,7 @@
     let pinPositions = JSON.parse(localStorage.getItem('vball9_pin_positions')) || DEFAULT_POSITIONS;
     let ballPosition = JSON.parse(localStorage.getItem('vball9_ball_position')) || { x: 50, y: 50 };
     let savedTactics = JSON.parse(localStorage.getItem('vball9_saved_tactics')) || []; //
+    let isLoadedTacticsActive = false;
 
     let flickStarters = JSON.parse(localStorage.getItem('vball9_flick_starters')) || Array(9).fill("");
     let savedMatches = JSON.parse(localStorage.getItem('vball9_saved_matches')) || [];
@@ -1993,6 +2001,15 @@
             renderMyStats();
         } else if (tabId === 'tab-team-stats') {
             renderTeamStats(); // 追加
+        } else if (tabId === 'tab-court') { // ★追加: 戦術タブを開いた時の処理
+            const selectEl = document.getElementById('tactics-select');
+            // ドロップダウンで新規作成（未選択）になっている場合はデフォルト配置をセット
+            if (selectEl && !selectEl.value) {
+                pinPositions = JSON.parse(JSON.stringify(DEFAULT_POSITIONS));
+                ballPosition = { x: 50, y: 50 };
+            }
+            renderStartersUI();
+            renderCourt(); // 表示状態になってから作戦ボードを正しく描画
         } else if (tabId === 'tab-flick') {
             renderFlickCourt();
             renderFlickStartersUI();
@@ -2243,6 +2260,7 @@
             }
         });
     }
+
     async function saveStorage() {
         localStorage.setItem('vball9_players', JSON.stringify(players));
         localStorage.setItem('vball9_starters', JSON.stringify(starters));
@@ -2270,7 +2288,7 @@
                     teamFinances: teamFinances,
                     savedTactics: savedTactics,
                     updatedAt: new Date().toISOString()
-                });
+                }, { merge: true }); // merge: true を指定して既存データを保護
                 console.log("Firestoreへの同期完了");
             } catch (error) {
                 console.error("Firestore保存エラー:", error);
@@ -2298,15 +2316,49 @@
 
                 if (data.players) players = data.players;
                 if (data.starters) starters = data.starters;
-                if (data.pinPositions) pinPositions = data.pinPositions;
-                if (data.ballPosition) ballPosition = data.ballPosition;
                 if (data.flickStarters) flickStarters = data.flickStarters;
                 if (data.savedMatches) savedMatches = data.savedMatches;
                 if (data.teamIssues) teamIssues = data.teamIssues;
                 if (data.teamFinances) teamFinances = data.teamFinances;
-                if (data.savedTactics) savedTactics = data.savedTactics;
+                
+                // 裏データとしてピン位置・ボール位置を更新（画面描画は行わない）
+                if (data.pinPositions) pinPositions = data.pinPositions;
+                if (data.ballPosition) ballPosition = data.ballPosition;
 
-                render();
+                // 戦術一覧リストのみバックグラウンドで最新化
+                if (data.savedTactics) {
+                    savedTactics = data.savedTactics;
+                    localStorage.setItem('vball9_saved_tactics', JSON.stringify(savedTactics));
+                    renderTacticsSelect();
+                }
+
+                // ★ 作戦ボード(renderCourt)は実行せず、他の表示領域のみ更新
+                renderStartersUI();
+                renderFlickStartersUI();
+                renderSavedMatchesSelect();
+                renderFinanceYearsSelect();
+                
+                // 選手一覧テーブルのみ更新
+                const listEl = document.getElementById('player-list');
+                if (listEl) {
+                    listEl.innerHTML = '';
+                    players.sort((a, b) => Number(a.number) - Number(b.number)).forEach(p => {
+                        if (!p.stats) p.stats = initStatsObj();
+                        const tr = document.createElement('tr');
+                        const subBadges = (p.subPositions && p.subPositions.length > 0)
+                            ? p.subPositions.map(sp => `<span class="badge badge-sub">${sp}</span>`).join('')
+                            : '';
+                        const heightStr = p.height !== '-' ? `${p.height}cm` : '-';
+                        tr.innerHTML = `
+                            <td><b>${p.number}</b></td>
+                            <td><span class="clickable-player-name" onclick="openInfoModal(players.find(pl => String(pl.id) === String('${p.id}')), true)">${p.name}</span></td>
+                            <td>${heightStr}</td>
+                            <td><span class="badge">${p.position}</span><br>${subBadges}</td>
+                            <td><div class="btn-group"><button class="btn-edit" onclick="openEditModal('${p.id}')">編集</button><button class="btn-del" onclick="deletePlayer('${p.id}')">削除</button></div></td>
+                        `;
+                        listEl.appendChild(tr);
+                    });
+                }
                 
                 isRemoteUpdate = false;
                 console.log("クラウド(Firestore)から最新データを受け取りました");
@@ -4339,7 +4391,6 @@
 
     function onStarterChange(index, val) {
         starters[index] = String(val || "");
-        saveStorage();
         renderStartersUI();
         renderCourt();
     }
@@ -4412,19 +4463,26 @@
 
     function renderCourt() {
         const canvas = document.getElementById('court-canvas');
+        if (!canvas) return; // ★追加: 要素が存在しない場合のエラー防止
         canvas.querySelectorAll('.player-pin').forEach(el => el.remove());
 
         const ballPin = document.getElementById('ball-pin');
-        ballPin.style.left = `${ballPosition.x}%`;
-        ballPin.style.top = `${ballPosition.y}%`;
-        makeBallDraggable(ballPin);
+        if (ballPin) {
+            // ★修正: ballPositionが万が一未定義の場合の保護
+            const bx = (ballPosition && typeof ballPosition.x === 'number') ? ballPosition.x : 50;
+            const by = (ballPosition && typeof ballPosition.y === 'number') ? ballPosition.y : 50;
+            ballPin.style.left = `${bx}%`;
+            ballPin.style.top = `${by}%`;
+            makeBallDraggable(ballPin);
+        }
 
         starters.forEach((pId, idx) => {
             if (!pId) return;
             const p = players.find(player => String(player.id) === String(pId));
             if (!p) return;
 
-            const pos = pinPositions[idx] || DEFAULT_POSITIONS[idx];
+            // ★修正: pinPositions[idx] が取れない場合は DEFAULT_POSITIONS[idx] を使用
+            const pos = (pinPositions && pinPositions[idx]) ? pinPositions[idx] : DEFAULT_POSITIONS[idx];
             const pin = document.createElement('div');
             pin.className = 'player-pin';
             pin.style.left = `${pos.x}%`;
@@ -4473,7 +4531,7 @@
         updateTacticsSaveBtnLabel();
     }
 
-   // 現在の配置（座標＆選手選出）を戦術として保存
+    // 現在の配置（座標＆選手選出）を戦術として保存
     function saveTacticsPosition() {
         const selectEl = document.getElementById('tactics-select');
         const nameInput = document.getElementById('tactics-name-input');
@@ -4487,7 +4545,7 @@
                 if (name) tactics.name = name;
                 tactics.pinPositions = JSON.parse(JSON.stringify(pinPositions));
                 tactics.ballPosition = JSON.parse(JSON.stringify(ballPosition));
-                tactics.starters = JSON.parse(JSON.stringify(starters)); // ★追加：スタメン配置選手も記憶
+                tactics.starters = JSON.parse(JSON.stringify(starters));
 
                 saveStorage();
                 renderTacticsSelect();
@@ -4510,7 +4568,7 @@
             name: name,
             pinPositions: JSON.parse(JSON.stringify(pinPositions)),
             ballPosition: JSON.parse(JSON.stringify(ballPosition)),
-            starters: JSON.parse(JSON.stringify(starters)) // ★追加：スタメン配置選手も記憶
+            starters: JSON.parse(JSON.stringify(starters))
         };
 
         savedTactics.push(newTactics);
@@ -4519,6 +4577,9 @@
 
         if (selectEl) selectEl.value = newTactics.id;
         nameInput.value = '';
+        
+        // ★追加: 作成完了後は呼び出し中状態（他人に自動共有しない）へ移行
+        isLoadedTacticsActive = true; 
         updateTacticsSaveBtnLabel();
         showToast(`新戦術「${name}」を作成しました`);
     }
@@ -4534,6 +4595,12 @@
 
         if (!targetId) {
             if (nameInput) nameInput.value = '';
+            isLoadedTacticsActive = false;
+            
+            // ★追加: 新規作成（未選択）に戻した時はデフォルト座標をセットして再描画
+            pinPositions = JSON.parse(JSON.stringify(DEFAULT_POSITIONS));
+            ballPosition = { x: 50, y: 50 };
+            renderCourt();
             return;
         }
 
@@ -4544,18 +4611,17 @@
             if (tactics.ballPosition) {
                 ballPosition = JSON.parse(JSON.stringify(tactics.ballPosition));
             }
-            // ★追加：保存された選手配置があれば復元（過去の選手データとの互換性も考慮）
             if (tactics.starters) {
                 starters = JSON.parse(JSON.stringify(tactics.starters));
             }
 
-            saveStorage();
-            renderStartersUI(); // ★追加：スタメン選択セレクトボックスの表示を更新
-            renderCourt();      // コート上の選手ピンを再描画
+            isLoadedTacticsActive = true; 
+
+            renderStartersUI();
+            renderCourt();
             showToast(`フォーメーション「${tactics.name}」を呼び出しました`);
         }
     }
-
     // 選択中のフォーメーションを削除
     function deleteTacticsPosition() {
         const selectEl = document.getElementById('tactics-select');
@@ -4571,6 +4637,10 @@
         if (!confirm(`フォーメーション「${tactics.name}」を削除しますか？`)) return;
 
         savedTactics = savedTactics.filter(t => String(t.id) !== String(targetId));
+        
+        // ★追加: 削除後は新規作成モード（フラグ解除）へ戻す
+        isLoadedTacticsActive = false; 
+
         saveStorage();
         renderTacticsSelect();
         updateTacticsSaveBtnLabel();
@@ -4895,7 +4965,6 @@
                     try { element.releasePointerCapture(activePointerId); } catch(err) {}
                     activePointerId = null;
                 }
-                saveStorage();
             }
         }
 
@@ -4954,7 +5023,6 @@
                     try { element.releasePointerCapture(activePointerId); } catch(err) {}
                     activePointerId = null;
                 }
-                saveStorage();
                 
                 if (!hasMoved) {
                     openInfoModal(player, false);
@@ -5010,6 +5078,14 @@
             `;
             listEl.appendChild(tr);
         });
+
+        // ★追加: 配列・オブジェクトが壊れていないか最終チェック
+        if (!Array.isArray(pinPositions) || pinPositions.length === 0) {
+            pinPositions = JSON.parse(JSON.stringify(DEFAULT_POSITIONS));
+        }
+        if (!ballPosition || typeof ballPosition.x !== 'number') {
+            ballPosition = { x: 50, y: 50 };
+        }
 
         renderStartersUI();
         renderFlickStartersUI();
