@@ -120,7 +120,7 @@
             padding: 32px 28px;
             border-radius: 20px;
             width: 90%;
-            max-width: 380px;
+            max-width: 320px;
             
             /* 深みのある立体的なシャドウ */
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5),
@@ -133,14 +133,14 @@
             margin-top: 0;
             margin-bottom: 10px;
             color: #ffffff;
-            font-size: 1.25rem;
+            font-size: 1.05rem;
             font-weight: 800;
             letter-spacing: 0.05em;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .auth-card p {
-            font-size: 0.82rem;
+            font-size: 0.75rem;
             color: #cbd5e1; /* 背景が透けても見やすい明るいグレー */
             margin-bottom: 12px;
             line-height: 1.5;
@@ -151,7 +151,9 @@
             background: rgba(255, 255, 255, 0.12);
             border: 1px solid rgba(255, 255, 255, 0.25);
             color: #ffffff;
-            border-radius: 10px;
+            border-radius: 8px;
+            padding: 8px 10px !important; /* パディングを小さく */
+            font-size: 0.85rem !important; /* 入力文字サイズを微調整 */
             transition: all 0.2s ease;
         }
 
@@ -169,12 +171,15 @@
         /* チェックボックスとラベルの文字色調整 */
         .auth-card label[for="remember-password-check"] {
             color: #e2e8f0 !important;
+            font-size: 0.8rem !important; /* テキストサイズ縮小 */
         }
 
         /* ログインボタンのグラデーション化 */
         .auth-card button.action-btn {
             background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            border-radius: 10px;
+            border-radius: 8px;
+            padding: 8px 12px; /* ボタンの高さをスリム化 */
+            font-size: 0.88rem; /* 文字サイズ縮小 */
             box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
@@ -970,7 +975,7 @@
 <!-- ログイン入力用モーダル -->
 <div id="login-modal-overlay" class="auth-modal-overlay">
     <div class="auth-card">
-        <h3>静南クラブ管理アプリ ログイン</h3>
+        <h3>静南クラブ ログイン</h3>
         <p style="margin-bottom:12px;">氏名の頭文字_パスワード の形式で入力してください</p>
         <p style="font-size:0.75rem; color:#94a3b8; margin-top:0; margin-bottom:16px;">例: 鈴木 太郎の場合</p>
         <p style="font-size:0.75rem; color:#94a3b8; margin-top:0; margin-bottom:16px;">例: st_パスワード</p>
