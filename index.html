@@ -2497,7 +2497,28 @@
             teamTot.otherError += (st.otherError || 0);
         });
 
-        // ★追加: チーム全体トータル行の計算と描写
+        // ★修正: 上の階層（親グループ/大会・日付単位）のユニーク数をカウント
+        const parentMatchGroups = new Set(
+            (savedMatches || []).map(m => {
+                // 親グループ識別キー（groupKey優先、なければ日付+大会名/試合名から判定）
+                if (m.groupKey) return m.groupKey;
+                if (m.matchGroupKey) return m.matchGroupKey;
+                // キーがない場合は日付と大会名・対戦名から親階層の文字列を作成
+                const dateStr = m.date || '';
+                const tourneyStr = m.tournament || '';
+                const matchNameStr = (m.matchName || '').split(' 第')[0]; // 「第1セット」等を除去
+                return `${dateStr}_${tourneyStr}_${matchNameStr}`;
+            }).filter(Boolean) // 空文字等を除外
+        );
+
+        // 親階層の実際の個数を取得
+        const totalMatchesCount = parentMatchGroups.size;
+
+        // ブロックとその他ミスの1試合あたり平均値を計算（試合数が0の場合は0）
+        const avgBlockSuccess = totalMatchesCount > 0 ? (teamTot.block.success / totalMatchesCount).toFixed(1) : "0.0";
+        const avgBlockTouch   = totalMatchesCount > 0 ? (teamTot.block.continue / totalMatchesCount).toFixed(1) : "0.0";
+        const avgOtherError   = totalMatchesCount > 0 ? (teamTot.otherError / totalMatchesCount).toFixed(1) : "0.0";
+
         const tSpikeTotal = teamTot.spike.success + teamTot.spike.continue + teamTot.spike.error;
         const tSpikeRate = calcRate(teamTot.spike.success, tSpikeTotal);
 
@@ -2508,17 +2529,15 @@
         const tRecRate = calcRate(teamTot.reception.success, tRecTotal);
 
         const teamTr = document.createElement('tr');
-        teamTr.style.backgroundColor = '#eff6ff'; // 目立たせる背景色（薄い青）
-        teamTr.style.borderBottom = '2px solid #2563eb';
         teamTr.className = 'team-total-row';
         teamTr.innerHTML = `
             <td>-</td>
-            <td><b style="color:#2563eb;">チーム合計</b></td>
+            <td><b style="color:#2563eb;">チーム平均<br><span style="font-size:0.65rem; color:#64748b;">(全${totalMatchesCount}試合)</span></b></td>
             <td><b>${tSpikeRate}</b><br><span style="font-size:0.65rem;">(${teamTot.spike.success}/${tSpikeTotal})</span></td>
             <td><b>${tServeRate}</b><br><span style="font-size:0.65rem;">(${teamTot.serve.success}/${tServeTotal})</span></td>
-            <td><b>${teamTot.block.success}本</b><br><span style="font-size:0.65rem;">(ワン:${teamTot.block.continue})</span></td>
+            <td><b>${avgBlockSuccess}本/試</b><br><span style="font-size:0.65rem;">(ワン:${avgBlockTouch})</span></td>
             <td><b>${tRecRate}</b><br><span style="font-size:0.65rem;">(${teamTot.reception.success}/${tRecTotal})</span></td>
-            <td><b>${teamTot.otherError}本</b></td>
+            <td><b>${avgOtherError}本/試</b></td>
         `;
         listEl.appendChild(teamTr);
 
