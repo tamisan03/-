@@ -1376,7 +1376,7 @@
 
             <!-- 相手攻撃位置の失点記録ボタン（全体スタッツ風デザインに統一） -->
             <div style="margin-bottom: 16px;">
-                <div style="font-size: 0.85rem; font-weight: bold; color: #1e293b; margin-bottom: 6px;">🎯 相手攻撃ポジション別失点記録</div>
+                <div style="font-size: 0.85rem; font-weight: bold; color: #1e293b; margin-bottom: 6px;"> 相手攻撃ポジション別失点記録</div>
                 <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;">
                     <button type="button" onclick="recordOpponentAttackPos('left')" style="background: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0; padding: 10px 2px; border-radius: 8px; cursor: pointer; text-align: center;">
                         <div style="font-size:0.72rem; color:#64748b; font-weight:bold; margin-bottom:2px;">レフト</div>
@@ -3646,7 +3646,7 @@
         const calcOaPct = (val) => totalOppAttacks > 0 ? ((val / totalOppAttacks) * 100).toFixed(1) : '0.0';
 
         oaContainer.innerHTML = `
-            <div class="top3-section-title" style="color:#0f172a; border-bottom-color:#e2e8f0;">🎯 相手攻撃ポジション別失点内訳（合計 ${totalOppAttacks} 本）</div>
+            <div class="top3-section-title" style="color:#0f172a; border-bottom-color:#e2e8f0;"> 相手攻撃ポジション別失点内訳（合計 ${totalOppAttacks} 本）</div>
             <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; text-align: center;">
                 <div style="background: #f8fafc; padding: 8px 2px; border-radius: 8px; border: 1px solid #e2e8f0;">
                     <div style="font-size:0.72rem; color:#64748b; font-weight:bold;">レフト</div>
