@@ -1017,6 +1017,13 @@
             #history-player-table th:nth-child(7), #history-player-table td:nth-child(7) { width: 8%; text-align: center; }
             #history-player-table th:nth-child(8), #history-player-table td:nth-child(8) { width: 14%; text-align: center; }
 
+            /* ★全体成績テーブル（#team-stats-table）の列幅調整 */
+            #team-stats-table th:nth-child(1), #team-stats-table td:nth-child(1) { 
+                width: 5%px !important; /* 背番号の領域幅を最小限（約45px）に固定 */
+                text-align: center !important;
+                white-space: nowrap !important;
+            }
+
             table th, table td {
                 padding: 6px 1px !important;
                 font-size: 0.68rem !important;
