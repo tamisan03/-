@@ -515,7 +515,15 @@
         }
 
         th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
-        th { background: #f1f5f9; color: #475569; position: sticky; top: 0; z-index: 2; }
+        th { background: #f1f5f9; color: #475569; position: sticky; top: 0; z-index: 10; }
+        /* ★追加: チーム合計行のセルをヘッダの下（top: 35px付近）に固定表示 */
+        tr.team-total-row td {
+            position: sticky;
+            top: 35px; /* ヘッダの高さに合わせて調整 */
+            z-index: 9;
+            background-color: #eff6ff !important; /* スクロール時に背景が透けないよう固定 */
+            border-bottom: 2px solid #2563eb !important;
+        }
         th.sortable { cursor: pointer; user-select: none; }
         th.sortable:hover { background: #e2e8f0; }
         
@@ -1221,7 +1229,7 @@
             <div style="font-size:0.8rem; color:#64748b; margin-bottom:12px;">
                 ※チーム全員の通算成績です。各項目名をタップすると並び順を変更できます。
             </div>
-            <div class="table-wrapper">
+            <div class="table-wrapper" style="max-height: 70vh; overflow-y: auto;">
                 <table id="team-stats-table">
                     <thead>
                         <tr>
@@ -2458,6 +2466,61 @@
             // デフォルトは背番号順
             pList.sort((a, b) => Number(a.player.number) - Number(b.player.number));
         }
+
+        // ★追加: チーム全体の合計スタッツを集計
+        const teamTot = {
+            spike: { success: 0, continue: 0, error: 0 },
+            serve: { success: 0, continue: 0, error: 0 },
+            block: { success: 0, continue: 0, error: 0 },
+            reception: { success: 0, continue: 0, error: 0 },
+            otherError: 0
+        };
+
+        pList.forEach(item => {
+            const st = item.stats;
+            teamTot.spike.success += (st.spike.success || 0);
+            teamTot.spike.continue += (st.spike.continue || 0);
+            teamTot.spike.error += (st.spike.error || 0);
+
+            teamTot.serve.success += (st.serve.success || 0);
+            teamTot.serve.continue += (st.serve.continue || 0);
+            teamTot.serve.error += (st.serve.error || 0);
+
+            teamTot.block.success += (st.block.success || 0);
+            teamTot.block.continue += (st.block.continue || 0);
+            teamTot.block.error += (st.block.error || 0);
+
+            teamTot.reception.success += (st.reception.success || 0);
+            teamTot.reception.continue += (st.reception.continue || 0);
+            teamTot.reception.error += (st.reception.error || 0);
+
+            teamTot.otherError += (st.otherError || 0);
+        });
+
+        // ★追加: チーム全体トータル行の計算と描写
+        const tSpikeTotal = teamTot.spike.success + teamTot.spike.continue + teamTot.spike.error;
+        const tSpikeRate = calcRate(teamTot.spike.success, tSpikeTotal);
+
+        const tServeTotal = teamTot.serve.success + teamTot.serve.continue + teamTot.serve.error;
+        const tServeRate = calcRate(teamTot.serve.success, tServeTotal);
+
+        const tRecTotal = teamTot.reception.success + teamTot.reception.continue + teamTot.reception.error;
+        const tRecRate = calcRate(teamTot.reception.success, tRecTotal);
+
+        const teamTr = document.createElement('tr');
+        teamTr.style.backgroundColor = '#eff6ff'; // 目立たせる背景色（薄い青）
+        teamTr.style.borderBottom = '2px solid #2563eb';
+        teamTr.className = 'team-total-row';
+        teamTr.innerHTML = `
+            <td>-</td>
+            <td><b style="color:#2563eb;">チーム合計</b></td>
+            <td><b>${tSpikeRate}</b><br><span style="font-size:0.65rem;">(${teamTot.spike.success}/${tSpikeTotal})</span></td>
+            <td><b>${tServeRate}</b><br><span style="font-size:0.65rem;">(${teamTot.serve.success}/${tServeTotal})</span></td>
+            <td><b>${teamTot.block.success}本</b><br><span style="font-size:0.65rem;">(ワン:${teamTot.block.continue})</span></td>
+            <td><b>${tRecRate}</b><br><span style="font-size:0.65rem;">(${teamTot.reception.success}/${tRecTotal})</span></td>
+            <td><b>${teamTot.otherError}本</b></td>
+        `;
+        listEl.appendChild(teamTr);
 
         pList.forEach(item => {
             const p = item.player;
