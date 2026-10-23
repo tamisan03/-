@@ -2634,7 +2634,9 @@
         });
     }
 
+    // 【修正後】 (index.html 内の saveStorage 関数)
     async function saveStorage() {
+        // ローカルストレージへの即時保存
         localStorage.setItem('vball9_players', JSON.stringify(players));
         localStorage.setItem('vball9_starters', JSON.stringify(starters));
         localStorage.setItem('vball9_pin_positions', JSON.stringify(pinPositions));
@@ -2644,12 +2646,23 @@
         localStorage.setItem('vball9_team_issues', JSON.stringify(teamIssues));
         localStorage.setItem('vball9_team_finances', JSON.stringify(teamFinances));
         localStorage.setItem('vball9_saved_tactics', JSON.stringify(savedTactics));
+        localStorage.setItem('vball9_current_lost_points', JSON.stringify(currentLostPoints));
+        localStorage.setItem('vball9_current_opponent_attacks', JSON.stringify(currentOpponentAttacks));
 
         if (isRemoteUpdate) return;
 
         if (window.db && window.firestoreTools) {
             const { doc, setDoc } = window.firestoreTools;
             try {
+                // ① 記録用（リアルタイム戦況・失点・アタック位置・スタメン配置）の超軽量同期（即座に届く）
+                await setDoc(doc(window.db, "teams", "seinan_live"), {
+                    flickStarters: flickStarters,
+                    currentLostPoints: currentLostPoints,
+                    currentOpponentAttacks: currentOpponentAttacks,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+
+                // ② 全体マスターデータ（選手一覧・過去戦績など重いデータ）の同期
                 await setDoc(doc(window.db, "teams", "seinan_data"), {
                     players: players,
                     starters: starters,
@@ -2661,14 +2674,16 @@
                     teamFinances: teamFinances,
                     savedTactics: savedTactics,
                     updatedAt: new Date().toISOString()
-                }, { merge: true }); // merge: true を指定して既存データを保護
-                console.log("Firestoreへの同期完了");
+                }, { merge: true });
+
+                console.log("Firestoreへの軽量同期および全体同期完了");
             } catch (error) {
                 console.error("Firestore保存エラー:", error);
             }
         }
     }
 
+    // 【修正後】 (index.html 内の setupFirestoreSync 関数)
     function setupFirestoreSync() {
         if (!window.db || !window.firestoreTools) {
             setTimeout(setupFirestoreSync, 500);
@@ -2677,6 +2692,39 @@
 
         const { doc, onSnapshot } = window.firestoreTools;
 
+        // A. リアルタイム記録データ専用リスナー（超高速反映用）
+        onSnapshot(doc(window.db, "teams", "seinan_live"), (snapshot) => {
+            if (snapshot.metadata && snapshot.metadata.hasPendingWrites) {
+                return;
+            }
+
+            if (snapshot.exists()) {
+                const liveData = snapshot.data();
+                isRemoteUpdate = true;
+
+                if (liveData.flickStarters) flickStarters = liveData.flickStarters;
+                if (liveData.currentLostPoints) {
+                    currentLostPoints = liveData.currentLostPoints;
+                    localStorage.setItem('vball9_current_lost_points', JSON.stringify(currentLostPoints));
+                }
+                if (liveData.currentOpponentAttacks) {
+                    currentOpponentAttacks = liveData.currentOpponentAttacks;
+                    localStorage.setItem('vball9_current_opponent_attacks', JSON.stringify(currentOpponentAttacks));
+                }
+
+                // 記録タブ・各種表示の即時再描画
+                updateLostPointsDisplay();
+                updateOpponentAttacksDisplay();
+                renderFlickCourt();
+                renderTeamSummary(players, 'current-team-summary', '📊 チーム全体スタッツ（現在の試合）');
+
+                isRemoteUpdate = false;
+            }
+        }, (error) => {
+            console.error("Liveデータ受信エラー:", error);
+        });
+
+        // B. 全体マスターデータリスナー（選手登録・過去戦績・収支等）
         onSnapshot(doc(window.db, "teams", "seinan_data"), (snapshot) => {
             if (snapshot.metadata && snapshot.metadata.hasPendingWrites) {
                 return;
@@ -2684,7 +2732,6 @@
 
             if (snapshot.exists()) {
                 const data = snapshot.data();
-                
                 isRemoteUpdate = true;
 
                 if (data.players) {
@@ -2692,24 +2739,19 @@
                     localStorage.setItem('vball9_players', JSON.stringify(players));
                 }
                 if (data.starters) starters = data.starters;
-                if (data.flickStarters) flickStarters = data.flickStarters;
                 if (data.savedMatches) savedMatches = data.savedMatches;
                 if (data.teamIssues) teamIssues = data.teamIssues;
                 if (data.teamFinances) teamFinances = data.teamFinances;
-                
                 if (data.savedTactics) {
                     savedTactics = data.savedTactics;
                     localStorage.setItem('vball9_saved_tactics', JSON.stringify(savedTactics));
                 }
 
-                // ★データ受信時に画面UI（選手一覧・各種UI）を確実に更新
                 render();
-                
                 isRemoteUpdate = false;
-                console.log("クラウド(Firestore)から最新データを受け取り再描画しました");
             }
         }, (error) => {
-            console.error("Firestore受信エラー:", error);
+            console.error("全体データ受信エラー:", error);
         });
     }
 
