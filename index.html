@@ -1872,7 +1872,7 @@
         let userNameInput = "";
         let inputPass = "";
 
-        // 管理者パスワード(seinan2026_admin)または一般パスワード(seinan2026)が入力文字列に含まれているか判定
+        // 管理者パスワードまたは一般パスワードの判定
         if (rawInput.endsWith(ADMIN_PASSWORD)) {
             isAdmin = true;
             inputPass = ADMIN_PASSWORD;
@@ -1882,25 +1882,29 @@
             inputPass = USER_PASSWORD;
             userNameInput = rawInput.slice(0, -USER_PASSWORD.length).replace(/_$/, '');
         } else {
-            const lastUnderscoreIdx = rawInput.lastIndexOf('_');
-            if (lastUnderscoreIdx !== -1) {
-                userNameInput = rawInput.substring(0, lastUnderscoreIdx);
-                inputPass = rawInput.substring(lastUnderscoreIdx + 1);
-            } else {
-                inputPass = rawInput;
-            }
-            
             alert(`パスワードが違います。\n入力された文字: 「${rawInput}」`);
             passInput.value = '';
             passInput.focus();
             return;
         }
 
-        console.log("【入力チェック】 抽出ID:", userNameInput, "抽出Pass:", inputPass, "管理者フラグ:", isAdmin);
-
         const cleanInputId = userNameInput.trim().toLowerCase();
 
-        // 🔍 PWA対策: メモリ・LocalStorage・Firestoreから選手データを確実にロード
+        // タイムアウト付きでFirestoreを取得する安全関数
+        const safeFetchFirestore = async () => {
+            if (typeof fetchFirestoreDoc !== 'function') return null;
+            try {
+                return await Promise.race([
+                    fetchFirestoreDoc(),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3500))
+                ]);
+            } catch (e) {
+                console.warn("Firestore取得タイムアウトまたは失敗:", e);
+                return null;
+            }
+        };
+
+        // キャッシュがない場合のみ取得を試みる
         if (!players || players.length === 0) {
             const localSaved = localStorage.getItem('vball9_players');
             if (localSaved) {
@@ -1908,7 +1912,7 @@
             }
 
             if (!players || players.length === 0) {
-                const cloudData = await fetchFirestoreDoc();
+                const cloudData = await safeFetchFirestore();
                 if (cloudData && cloudData.players && cloudData.players.length > 0) {
                     players = cloudData.players;
                     localStorage.setItem('vball9_players', JSON.stringify(players));
@@ -1916,9 +1920,9 @@
             }
         }
 
-        // 一般ユーザーの場合のみ、選手リストとの照合を実施
+        // 一般ユーザーの場合の選手照合
         if (!isAdmin) {
-            if (!userNameInput || userNameInput.trim() === '') {
+            if (!userNameInput || cleanInputId === '') {
                 alert("ログインには名前（ID）が必要です。\n「氏名頭文字_パスワード」の形式で入力してください。");
                 passInput.focus();
                 return;
@@ -1927,46 +1931,42 @@
             let matchedPlayer = (players || []).find(p => {
                 const playerLoginId = (p.loginId || '').trim().toLowerCase();
                 const playerName = (p.name || '').trim().toLowerCase();
-                return playerLoginId === cleanInputId || playerName === cleanInputId;
+                return (playerLoginId && playerLoginId === cleanInputId) || (playerName && playerName === cleanInputId);
             });
 
-            // 万が一データ未同期でマッチしない場合、もう一度Firestoreを強制再読み込みして最終確認
-            if (!matchedPlayer) {
-                const retryData = await fetchFirestoreDoc();
+            // 見つからなければ1回だけ再取得を試みる（最大3.5秒で打ち切り）
+            if (!matchedPlayer && typeof fetchFirestoreDoc === 'function') {
+                const retryData = await safeFetchFirestore();
                 if (retryData && retryData.players) {
                     players = retryData.players;
                     localStorage.setItem('vball9_players', JSON.stringify(players));
                     matchedPlayer = (players || []).find(p => {
                         const playerLoginId = (p.loginId || '').trim().toLowerCase();
                         const playerName = (p.name || '').trim().toLowerCase();
-                        return playerLoginId === cleanInputId || playerName === cleanInputId;
+                        return (playerLoginId && playerLoginId === cleanInputId) || (playerName && playerName === cleanInputId);
                     });
                 }
             }
 
+            // それでも見つからない場合
             if (!matchedPlayer) {
-                const registeredIds = (players || []).map(p => p.loginId || p.name).join(", ");
-                alert(`【選手不一致】\n入力ID: 「${cleanInputId}」\n登録済みリスト(${players.length}名): [${registeredIds}]`);
-                passInput.focus();
-                return;
-            }
-            loginUserName = matchedPlayer.name;
-        } else {
-            // 管理者の場合は「頭文字」に該当する選手がいればその名前、なければ入力文字または"管理者"をセット
-            const matchedPlayer = (players || []).find(p => {
-                const playerLoginId = (p.loginId || '').trim().toLowerCase();
-                const playerName = (p.name || '').trim().toLowerCase();
-                return cleanInputId && (playerLoginId === cleanInputId || playerName === cleanInputId);
-            });
-
-            if (matchedPlayer) {
-                loginUserName = matchedPlayer.name;
+                // もしplayersリスト自体が通信エラー等で空の場合は、照合エラーで止めずにそのまま通す救済措置
+                if (!players || players.length === 0) {
+                    loginUserName = userNameInput.trim();
+                } else {
+                    const registeredIds = players.map(p => p.loginId || p.name).filter(Boolean).join(", ");
+                    alert(`【選手不一致】\n入力されたID: 「${cleanInputId}」\n登録済みリスト:\n[${registeredIds}]`);
+                    passInput.focus();
+                    return;
+                }
             } else {
-                loginUserName = userNameInput.trim() || "管理者";
+                loginUserName = matchedPlayer.name;
             }
+        } else {
+            loginUserName = userNameInput.trim() || "管理者";
         }
 
-        // ログイン成功時の処理
+        // ログイン情報の保存
         localStorage.setItem('vball9_is_admin', JSON.stringify(isAdmin));
         localStorage.setItem('vball9_login_user_name', loginUserName);
 
@@ -1978,6 +1978,7 @@
             localStorage.removeItem('vball9_remember_me');
         }
 
+        // 匿名認証（失敗しても処理を止めないようtry/catch）
         try {
             if (window.authTools && window.auth) {
                 const { signInAnonymously } = window.authTools;
@@ -1987,33 +1988,27 @@
             console.error("Firebase認証エラー:", error);
         }
 
-        // ログイン成功時にメインコンテンツを表示状態にする
+        // 画面切り替え
         document.body.classList.add('logged-in');
 
-        // モーダル要素を取得して非表示にする、または削除する
-        const authModal = document.querySelector('.auth-modal-overlay');
-        if (authModal) {
-            authModal.style.display = 'none';
-            // または authModal.remove(); でDOMから削除
+        const overlayEl = document.getElementById('login-modal-overlay');
+        if (overlayEl) {
+            overlayEl.classList.remove('show');
+            overlayEl.style.display = 'none';
         }
 
-        const overlayEl = document.getElementById('login-modal-overlay');
-        if (overlayEl) overlayEl.style.display = 'none';
-        
         setupFirestoreSync();
         applyRolePermissions();
         updateLoginUserInfoDisplay();
 
-        // ★追加: 初回ログイン時は新規作成モード（デフォルト配置）として初期化
-        pinPositions = JSON.parse(JSON.stringify(DEFAULT_POSITIONS));
-        ballPosition = { x: 50, y: 50 };
-        isLoadedTacticsActive = false;
-
         render();
         renderCourt();
 
-        if (!isAdmin) switchTab('tab-my-stats');
-        else switchTab('tab-register');
+        if (!isAdmin) {
+            switchTab('tab-my-stats');
+        } else {
+            switchTab('tab-register');
+        }
 
         showToast(`${loginUserName}さんとしてログインしました`);
     }
