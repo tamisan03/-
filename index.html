@@ -1137,7 +1137,12 @@
 <div id="login-modal-overlay" class="auth-modal-overlay">
     <div class="auth-card">
         <h3>静南クラブ ログイン</h3>
-        <p style="margin-bottom:16px; color:#cbd5e1; font-size:0.85rem;">パスワードを入力してください</p>
+        <p style="margin-bottom:8px; font-size:0.85rem; color:#f8fafc; font-weight:bold;">
+            ※初期に配布したパスワードに戻しました
+        </p>
+        <p style="font-size:0.75rem; color:#94a3b8; margin-top:0; margin-bottom:16px;">
+            配布済みのチーム共通パスワードを入力してください
+        </p>
         <form onsubmit="handleLoginSubmit(event)">
             <input type="text" name="username" value="team_user" style="display:none;" autocomplete="username">
             <div class="form-group" style="margin-bottom: 12px;">
@@ -1146,7 +1151,7 @@
             
             <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
                 <input type="checkbox" id="remember-password-check" style="width: auto; cursor: pointer;">
-                <label for="remember-password-check" style="margin-bottom: 0; cursor: pointer; font-size: 0.9rem; color: #334155;">ログイン情報を記憶する</label>
+                <label for="remember-password-check" style="margin-bottom: 0; cursor: pointer; font-size: 0.8rem; color: #e2e8f0;">ログイン情報を記憶する</label>
             </div>
 
             <button type="submit" class="action-btn">ログイン</button>
