@@ -1137,13 +1137,11 @@
 <div id="login-modal-overlay" class="auth-modal-overlay">
     <div class="auth-card">
         <h3>静南クラブ ログイン</h3>
-        <p style="margin-bottom:12px;">氏名の頭文字_パスワード の形式で入力してください</p>
-        <p style="font-size:0.75rem; color:#94a3b8; margin-top:0; margin-bottom:16px;">例: 鈴木 太郎の場合</p>
-        <p style="font-size:0.75rem; color:#94a3b8; margin-top:0; margin-bottom:16px;">例: st_パスワード</p>
+        <p style="margin-bottom:16px; color:#cbd5e1; font-size:0.85rem;">パスワードを入力してください</p>
         <form onsubmit="handleLoginSubmit(event)">
             <input type="text" name="username" value="team_user" style="display:none;" autocomplete="username">
             <div class="form-group" style="margin-bottom: 12px;">
-                <input type="password" id="input-app-password" placeholder="例: 氏名頭文字_パスワード" autocomplete="current-password" required style="text-align:center; font-size:0.95rem; padding:12px;">
+                <input type="password" id="input-app-password" placeholder="パスワードを入力" autocomplete="current-password" required style="text-align:center; font-size:0.95rem; padding:12px;">
             </div>
             
             <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
@@ -1869,106 +1867,23 @@
         const rememberEl = document.getElementById('remember-password-check');
         const rememberCheck = rememberEl ? rememberEl.checked : false;
 
-        let userNameInput = "";
-        let inputPass = "";
-
-        // 管理者パスワードまたは一般パスワードの判定
-        if (rawInput.endsWith(ADMIN_PASSWORD)) {
+        // パスワード単体で判定
+        if (rawInput === ADMIN_PASSWORD) {
             isAdmin = true;
-            inputPass = ADMIN_PASSWORD;
-            userNameInput = rawInput.slice(0, -ADMIN_PASSWORD.length).replace(/_$/, '');
-        } else if (rawInput.endsWith(USER_PASSWORD)) {
+            loginUserName = "管理者";
+        } else if (rawInput === USER_PASSWORD) {
             isAdmin = false;
-            inputPass = USER_PASSWORD;
-            userNameInput = rawInput.slice(0, -USER_PASSWORD.length).replace(/_$/, '');
+            loginUserName = ""; // 初期状態は未選択にする
         } else {
-            alert(`パスワードが違います。\n入力された文字: 「${rawInput}」`);
+            alert("パスワードが違います。");
             passInput.value = '';
             passInput.focus();
             return;
         }
 
-        const cleanInputId = userNameInput.trim().toLowerCase();
-
-        // タイムアウト付きでFirestoreを取得する安全関数
-        const safeFetchFirestore = async () => {
-            if (typeof fetchFirestoreDoc !== 'function') return null;
-            try {
-                return await Promise.race([
-                    fetchFirestoreDoc(),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3500))
-                ]);
-            } catch (e) {
-                console.warn("Firestore取得タイムアウトまたは失敗:", e);
-                return null;
-            }
-        };
-
-        // キャッシュがない場合のみ取得を試みる
-        if (!players || players.length === 0) {
-            const localSaved = localStorage.getItem('vball9_players');
-            if (localSaved) {
-                try { players = JSON.parse(localSaved); } catch(e){}
-            }
-
-            if (!players || players.length === 0) {
-                const cloudData = await safeFetchFirestore();
-                if (cloudData && cloudData.players && cloudData.players.length > 0) {
-                    players = cloudData.players;
-                    localStorage.setItem('vball9_players', JSON.stringify(players));
-                }
-            }
-        }
-
-        // 一般ユーザーの場合の選手照合
-        if (!isAdmin) {
-            if (!userNameInput || cleanInputId === '') {
-                alert("ログインには名前（ID）が必要です。\n「氏名頭文字_パスワード」の形式で入力してください。");
-                passInput.focus();
-                return;
-            }
-
-            let matchedPlayer = (players || []).find(p => {
-                const playerLoginId = (p.loginId || '').trim().toLowerCase();
-                const playerName = (p.name || '').trim().toLowerCase();
-                return (playerLoginId && playerLoginId === cleanInputId) || (playerName && playerName === cleanInputId);
-            });
-
-            // 見つからなければ1回だけ再取得を試みる（最大3.5秒で打ち切り）
-            if (!matchedPlayer && typeof fetchFirestoreDoc === 'function') {
-                const retryData = await safeFetchFirestore();
-                if (retryData && retryData.players) {
-                    players = retryData.players;
-                    localStorage.setItem('vball9_players', JSON.stringify(players));
-                    matchedPlayer = (players || []).find(p => {
-                        const playerLoginId = (p.loginId || '').trim().toLowerCase();
-                        const playerName = (p.name || '').trim().toLowerCase();
-                        return (playerLoginId && playerLoginId === cleanInputId) || (playerName && playerName === cleanInputId);
-                    });
-                }
-            }
-
-            // それでも見つからない場合
-            if (!matchedPlayer) {
-                // もしplayersリスト自体が通信エラー等で空の場合は、照合エラーで止めずにそのまま通す救済措置
-                if (!players || players.length === 0) {
-                    loginUserName = userNameInput.trim();
-                } else {
-                    const registeredIds = players.map(p => p.loginId || p.name).filter(Boolean).join(", ");
-                    alert(`【選手不一致】\n入力されたID: 「${cleanInputId}」\n登録済みリスト:\n[${registeredIds}]`);
-                    passInput.focus();
-                    return;
-                }
-            } else {
-                loginUserName = matchedPlayer.name;
-            }
-        } else {
-            loginUserName = userNameInput.trim() || "管理者";
-        }
-
-        // ログイン情報の保存
         localStorage.setItem('vball9_is_admin', JSON.stringify(isAdmin));
-        localStorage.setItem('vball9_login_user_name', loginUserName);
+        localStorage.removeItem('vball9_login_user_name');
+        localStorage.removeItem('vball9_selected_my_player');
 
         if (rememberCheck) {
             localStorage.setItem('vball9_saved_password', rawInput);
@@ -1978,7 +1893,6 @@
             localStorage.removeItem('vball9_remember_me');
         }
 
-        // 匿名認証（失敗しても処理を止めないようtry/catch）
         try {
             if (window.authTools && window.auth) {
                 const { signInAnonymously } = window.authTools;
@@ -1988,7 +1902,6 @@
             console.error("Firebase認証エラー:", error);
         }
 
-        // 画面切り替え
         document.body.classList.add('logged-in');
 
         const overlayEl = document.getElementById('login-modal-overlay');
@@ -2005,12 +1918,12 @@
         renderCourt();
 
         if (!isAdmin) {
-            switchTab('tab-my-stats');
+            switchTab('tab-list');
         } else {
             switchTab('tab-register');
         }
 
-        showToast(`${loginUserName}さんとしてログインしました`);
+        showToast(`${isAdmin ? '管理者' : 'チームメンバー'}としてログインしました`);
     }
 
     async function initAppAuth() {
@@ -2321,25 +2234,64 @@
         }
     }
 
+    function changeMyStatsPlayer(playerName) {
+        loginUserName = playerName;
+        if (playerName) {
+            localStorage.setItem('vball9_selected_my_player', playerName);
+            localStorage.setItem('vball9_login_user_name', playerName);
+        } else {
+            localStorage.removeItem('vball9_selected_my_player');
+            localStorage.removeItem('vball9_login_user_name');
+        }
+        renderMyStats();
+    }
+
     function renderMyStats() {
         const container = document.getElementById('my-stats-container');
         if (!container) return;
 
-        // ログイン中のユーザー名と一致する選手を取得
-        const myPlayer = players.find(p => p.name === loginUserName);
-
-        if (!myPlayer) {
+        if (!players || players.length === 0) {
             container.innerHTML = `
                 <h2>マイ成績（生涯通算）</h2>
                 <div style="text-align:center; padding:40px 10px; color:#64748b;">
-                    <p style="font-size:1.1rem; font-weight:bold; margin-bottom:8px;">選手データが見つかりません</p>
-                    <p style="font-size:0.85rem;">ログイン名（${loginUserName || "未ログイン"}）に該当する選手が「選手一覧」に登録されていないか、管理者ログイン中です。</p>
+                    <p style="font-size:1.1rem; font-weight:bold; margin-bottom:8px;">選手データがありません</p>
+                    <p style="font-size:0.85rem;">選手がまだ登録されていません。</p>
                 </div>
             `;
             return;
         }
 
-        // 全過去試合＋現在の試合の通算成績を取得
+        // 選択中の選手を取得（初期状態では未選択を許容）
+        let myPlayer = players.find(p => p.name === loginUserName);
+
+        // 選手選択用プルダウンの生成（先頭に「選手を選択してください」を配置）
+        const playerOptionsHtml = `
+            <option value="" ${!myPlayer ? 'selected' : ''}>-- 選手を選択してください --</option>
+            ${players.map(p => 
+                `<option value="${p.name}" ${myPlayer && p.name === myPlayer.name ? 'selected' : ''}>#${p.number} ${p.name}</option>`
+            ).join('')}
+        `;
+
+        // 選手が選択されていない初期状態の画面
+        if (!myPlayer) {
+            container.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:14px; background:#f1f5f9; padding:10px 14px; border-radius:10px;">
+                    <label style="font-weight:bold; color:#1e293b; font-size:0.9rem; margin-bottom:0;">表示選手を選択:</label>
+                    <select onchange="changeMyStatsPlayer(this.value)" style="width:auto; min-width:200px; font-weight:bold;">
+                        ${playerOptionsHtml}
+                    </select>
+                </div>
+
+                <div style="text-align:center; padding:50px 20px; color:#64748b; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px;">
+                    <div style="font-size:2rem; margin-bottom:10px;">👤</div>
+                    <p style="font-size:1rem; font-weight:bold; margin-bottom:6px; color:#1e293b;">選手が選択されていません</p>
+                    <p style="font-size:0.85rem; margin:0;">上のプルダウンメニューから自分の名前を選択すると、生涯通算成績とAIアドバイスが表示されます。</p>
+                </div>
+            `;
+            return;
+        }
+
+        // 選手選択後の成績集計・描画処理
         const st = getCombinedPlayerStats(myPlayer.id);
 
         const spikeTotal = st.spike.success + st.spike.continue + st.spike.error;
@@ -2355,10 +2307,16 @@
         const photoHtml = myPlayer.photo ? `<img src="${myPlayer.photo}" class="info-avatar" style="margin-bottom:8px;">` : '';
         const condEmoji = CONDITION_EMOJI[myPlayer.condition] || '普通';
 
-        // AIアドバイスの生成
         const aiAdviceHtml = generateAIAdvice(st, false);
 
         container.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:14px; background:#f1f5f9; padding:10px 14px; border-radius:10px;">
+                <label style="font-weight:bold; color:#1e293b; font-size:0.9rem; margin-bottom:0;">表示選手を選択:</label>
+                <select onchange="changeMyStatsPlayer(this.value)" style="width:auto; min-width:200px; font-weight:bold;">
+                    ${playerOptionsHtml}
+                </select>
+            </div>
+
             <div style="text-align:center; margin-bottom:16px;">
                 ${photoHtml}
                 <h2 style="margin:4px 0;">#${myPlayer.number} ${myPlayer.name} の生涯通算成績</h2>
@@ -2368,7 +2326,7 @@
             </div>
 
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:16px;">
-                <h3 style="font-size:1rem; margin-top:0; margin-bottom:10px; color:#1e293b; text-align:center;"> 生涯通算スタッツ</h3>
+                <h3 style="font-size:1rem; margin-top:0; margin-bottom:10px; color:#1e293b; text-align:center;">生涯通算スタッツ</h3>
                 <table class="stats-table" style="background:#ffffff; border-radius:8px; overflow:hidden;">
                     <thead>
                         <tr>
@@ -2775,7 +2733,7 @@
             // 制限対象のタブが開いている場合は「マイ成績」に切り替え
             const activeTab = document.querySelector('.tab-card.active');
             if (!activeTab || activeTab.id === 'tab-register' || activeTab.id === 'tab-flick' || activeTab.id === 'tab-finance') {
-                switchTab('tab-my-stats'); // ★ 'tab-list' から 'tab-my-stats' に変更
+                switchTab('tab-list'); // ★ 'tab-list' から 'tab-my-stats' に変更
             }
         } else {
             // 管理者：全タブ表示
