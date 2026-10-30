@@ -4549,7 +4549,8 @@
             const posSpikeCounts = {};
             let teamSpikeTotal = 0;
 
-            const TOSS_ORDER = FLICK_STARTER_LABELS;
+            // ★前衛6ポジションのみを対象順序に設定
+            const TOSS_ORDER = ['レフト', 'レフトセミ', 'クイック', 'セッター', 'ライトセミ', 'ライト'];
 
             flickStarters.forEach((pId, idx) => {
                 if (!pId) return;
@@ -4561,17 +4562,20 @@
 
                 if (pSpikeTotal > 0) {
                     let courtPosName = FLICK_STARTER_LABELS[idx] || p.position || 'その他';
-                    // ★「セッター」の場合は表示用キーを「ツーアタック」に変換
                     if (courtPosName === 'セッター') courtPosName = 'ツーアタック';
                     
-                    posSpikeCounts[courtPosName] = (posSpikeCounts[courtPosName] || 0) + pSpikeTotal;
-                    teamSpikeTotal += pSpikeTotal;
+                    // ★後衛3ポジションは除外して前衛のみ合算
+                    const isBackPos = ['レフトバック', 'センターバック', 'ライトバック'].includes(courtPosName);
+                    if (!isBackPos) {
+                        posSpikeCounts[courtPosName] = (posSpikeCounts[courtPosName] || 0) + pSpikeTotal;
+                        teamSpikeTotal += pSpikeTotal;
+                    }
                 }
             });
 
             let tossCardsHtml = '';
             if (teamSpikeTotal === 0) {
-                tossCardsHtml = '<div style="grid-column: 1/-1; font-size:0.8rem; color:#64748b; text-align:center; padding:8px;">コート上の配置選手にまだスパイク記録がありません</div>';
+                tossCardsHtml = '<div style="grid-column: 1/-1; font-size:0.8rem; color:#64748b; text-align:center; padding:8px;">前衛の配置選手にまだスパイク記録がありません</div>';
             } else {
                 TOSS_ORDER.forEach(courtPosName => {
                     const displayPosName = (courtPosName === 'セッター') ? 'ツーアタック' : courtPosName;
@@ -4581,9 +4585,8 @@
                         const pctNum = parseFloat(pct.toFixed(1));
                         const pctStr = pctNum.toFixed(1);
 
-                        // ★ ツーアタックおよびバック陣（レフトバック・センターバック・ライトバック）を除外対象に設定
-                        const isBackOrTwo = ['ツーアタック', 'レフトバック', 'センターバック', 'ライトバック'].includes(displayPosName);
-                        const isWarning = (!isBackOrTwo && pctNum < 13.0);
+                        // ★ツーアタック以外の前衛で13%未満を警告対象に判定
+                        const isWarning = (displayPosName !== 'ツーアタック' && pctNum < 13.0);
 
                         const cardBg = isWarning ? '#fee2e2' : '#ffffff';
                         const cardBorder = isWarning ? '#fca5a5' : '#e2e8f0';
@@ -4605,7 +4608,7 @@
             setterTossHtml = `
                 <div style="background:#f8fafc; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-top:15px;">
                     <div style="font-size:0.88rem; font-weight:800; color:#0f172a; margin-bottom:6px; text-align:center;">🏐 トス振り分け割合${labelSuffix}</div>
-                    <div style="font-size:0.75rem; color:#64748b; margin-bottom:8px; text-align:center;">総アタック打数: <b>${teamSpikeTotal}本</b></div>
+                    <div style="font-size:0.75rem; color:#64748b; margin-bottom:8px; text-align:center;">前衛総アタック打数: <b>${teamSpikeTotal}本</b></div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px;">
                         ${tossCardsHtml}
                     </div>
