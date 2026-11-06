@@ -1609,7 +1609,7 @@
 
                 <!-- 2. トス割合（セッター配球）を全体スタッツの直下へ移動 -->
                 <div id="history-toss-summary" class="top3-section-box" style="display:none;">
-                    <div class="top3-section-title" style="color:#0f172a; border-bottom-color:#e2e8f0;">🏐 トス割合 (セッターの配球)</div>
+                    <div class="top3-section-title" style="color:#0f172a; border-bottom-color:#e2e8f0;"> トス割合 (セッターの配球)</div>
                     <div id="history-toss-content"></div>
                 </div>
 
@@ -2605,7 +2605,7 @@
 
             myTossHtml = `
                 <div style="background:#f8fafc; padding:14px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:16px;">
-                    <h3 style="font-size:1rem; margin-top:0; margin-bottom:6px; color:#1e293b; text-align:center;">🏐 トス振り分け割合（生涯通算）</h3>
+                    <h3 style="font-size:1rem; margin-top:0; margin-bottom:6px; color:#1e293b; text-align:center;"> トス振り分け割合（生涯通算）</h3>
                     <div style="font-size:0.75rem; color:#64748b; margin-bottom:10px; text-align:center;">
                         セッター出場時の配球総打数: <b>${myTeamSpikeTotal}本</b>
                     </div>
@@ -4328,7 +4328,7 @@
 
         oaContainer.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #f1f5f9; padding-bottom: 6px; margin-bottom: 10px;">
-                <div style="font-size:0.88rem; font-weight:800; color:#0f172a;">🎯 相手攻撃ポジション別失点内訳</div>
+                <div style="font-size:0.88rem; font-weight:800; color:#0f172a;"> 相手攻撃ポジション別失点内訳</div>
                 <div style="font-size:0.75rem; font-weight:bold; color:#64748b;">被攻撃失点計: <b style="color:#0f172a; font-size:0.9rem;">${totalOppAttacks}</b> 本</div>
             </div>
             <div class="bar-chart-container">
@@ -5202,7 +5202,7 @@
             const labelSuffix = isCombined ? '（全試合累計）' : '（現在の試合）';
             setterTossHtml = `
                 <div style="background:#f8fafc; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-top:15px;">
-                    <div style="font-size:0.88rem; font-weight:800; color:#0f172a; margin-bottom:6px; text-align:center;">🏐 トス振り分け割合${labelSuffix}</div>
+                    <div style="font-size:0.88rem; font-weight:800; color:#0f172a; margin-bottom:6px; text-align:center;"> トス振り分け割合${labelSuffix}</div>
                     <div style="font-size:0.75rem; color:#64748b; margin-bottom:8px; text-align:center;">前衛総アタック打数: <b>${teamSpikeTotal}本</b></div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px;">
                         ${tossCardsHtml}
