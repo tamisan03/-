@@ -1185,10 +1185,6 @@
                 <input type="text" id="p-name" maxlength="20" placeholder="例: 山田 太郎">
             </div>
             <div class="form-group">
-                <label>ログイン用ID (英数字)<span class="required">*</span></label>
-                <input type="text" id="p-login-id" maxlength="20" placeholder="例: naoki">
-            </div>
-            <div class="form-group">
                 <label>選手画像</label>
                 <input type="file" id="p-image" accept="image/*">
             </div>
@@ -1354,9 +1350,30 @@
                 <label style="color:#1e293b; font-size:0.9rem; font-weight:bold;">現在の記録データを保存・リセット</label>
                 <div class="panel-row" style="flex-wrap: wrap; gap: 8px; margin-top: 8px;">
                     <input type="date" id="match-date-input" style="width:160px; font-size:0.85rem;">
+                    
+                    <!-- ★ここに追加：試合区分の選択プルダウン -->
+                    <select id="match-type-select" style="width:130px; font-size:0.85rem; font-weight:bold;">
+                        <option value="official" selected>大会</option>
+                        <option value="practice">練習試合</option>
+                    </select>
+
                     <input type="text" id="match-tournament-input" placeholder="大会名（例: 春季大会）" style="width:160px; font-size:0.85rem;">
                     <input type="text" id="match-name-input" value="対" placeholder="対戦カード（例: 対長田戦）" style="flex:1; font-size:0.85rem;">
-                    
+                        
+                    <!-- ★ここに追加：スコア入力と勝敗選択 -->
+                    <div style="display: flex; gap: 4px; align-items: center; background: #fff; padding: 4px 8px; border: 1px solid var(--border); border-radius: 8px;">
+                        <span style="font-size: 0.8rem; font-weight: bold; color: #475569;">スコア:</span>
+                        <!-- ★ value="0" を設定 -->
+                        <input type="number" id="match-score-my" value="0" min="0" max="99" style="width: 50px; padding: 6px 4px; text-align: center; font-size: 0.85rem;">
+                        <span style="font-weight: bold; color: #64748b;">-</span>
+                        <!-- ★ value="0" を設定 -->
+                        <input type="number" id="match-score-opp" value="0" min="0" max="99" style="width: 50px; padding: 6px 4px; text-align: center; font-size: 0.85rem;">
+                        
+                        <select id="match-result-select" style="width: 80px; padding: 6px 4px; font-size: 0.85rem; font-weight: bold;">
+                            <option value="win" selected>勝ち</option>
+                            <option value="lose">負け</option>
+                        </select>
+                    </div>
                     <button class="btn-save-match" onclick="saveMatchData()">保存</button>
                     <button class="btn-reset-stats" onclick="resetCurrentStats()">リセット</button>
                 </div>
@@ -1472,6 +1489,7 @@
                     <div id="match-meta-header" style="font-size:1rem; font-weight:bold; color:#1e293b;"></div>
                     <div id="single-match-actions" class="history-action-btn-group">
                         <button class="btn-history-edit" onclick="openEditMatchNameModal()">試合名修正</button>
+                        <button class="btn-history-edit" style="background:#0284c7;" onclick="openEditLostPointsModal()">失点データ修正</button>
                         <button class="btn-history-del" onclick="deleteSelectedMatchData()">試合データ削除</button>
                     </div>
                 </div>
@@ -1658,10 +1676,6 @@
             <input type="text" id="edit-name">
         </div>
         <div class="form-group">
-            <label>ログイン用ID (英数字)<span class="required">*</span></label>
-            <input type="text" id="edit-login-id">
-        </div>
-        <div class="form-group">
             <label>選手画像 (変更する場合のみ)</label>
             <input type="file" id="edit-image" accept="image/*">
             <button type="button" class="reset-photo-btn" onclick="resetPlayerPhoto()">画像を削除・リセット</button>
@@ -1754,6 +1768,76 @@
         <div class="modal-actions">
             <button class="action-btn" onclick="saveEditedMatchName()">変更を保存</button>
             <button class="btn-cancel" onclick="closeModal('edit-match-name-modal')">キャンセル</button>
+        </div>
+    </div>
+</div>
+
+<!-- ★追加：過去データの失点内訳修正モーダル -->
+<div class="modal-overlay" id="edit-lost-points-modal">
+    <div class="modal" style="max-width: 520px;">
+        <h2>失点データの修正</h2>
+
+        <!-- 自チーム失点パターン -->
+        <div class="edit-stat-group">
+            <div class="edit-stat-group-title">🔻 自チーム失点パターン内訳</div>
+            <div class="grid-3col" style="row-gap: 8px;">
+                <div>
+                    <label>ディグ(強打)</label>
+                    <input type="number" id="hist-lost-spike" min="0">
+                </div>
+                <div>
+                    <label>ディグ(緩打)</label>
+                    <input type="number" id="hist-lost-feint" min="0">
+                </div>
+                <div>
+                    <label>被ブロック</label>
+                    <input type="number" id="hist-lost-blocked" min="0">
+                </div>
+                <div>
+                    <label>レセプション</label>
+                    <input type="number" id="hist-lost-serve" min="0">
+                </div>
+                <div>
+                    <label>自滅</label>
+                    <input type="number" id="hist-lost-self" min="0">
+                </div>
+            </div>
+        </div>
+
+        <!-- 相手攻撃ポジション別失点 -->
+        <div class="edit-stat-group">
+            <div class="edit-stat-group-title"> 相手攻撃ポジション別失点</div>
+            <div class="grid-3col" style="row-gap: 8px;">
+                <div>
+                    <label>レフト</label>
+                    <input type="number" id="hist-opp-left" min="0">
+                </div>
+                <div>
+                    <label>レフトセミ</label>
+                    <input type="number" id="hist-opp-leftSemi" min="0">
+                </div>
+                <div>
+                    <label>速攻</label>
+                    <input type="number" id="hist-opp-quick" min="0">
+                </div>
+                <div>
+                    <label>ライトセミ</label>
+                    <input type="number" id="hist-opp-rightSemi" min="0">
+                </div>
+                <div>
+                    <label>ライト</label>
+                    <input type="number" id="hist-opp-right" min="0">
+                </div>
+                <div>
+                    <label>2アタック</label>
+                    <input type="number" id="hist-opp-twoAttack" min="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="action-btn" onclick="saveEditedLostPointsData()">変更を保存</button>
+            <button class="btn-cancel" onclick="closeModal('edit-lost-points-modal')">キャンセル</button>
         </div>
     </div>
 </div>
@@ -2239,6 +2323,33 @@
         }
     }
 
+    // スクリプトの末尾付近（または DOMContentLoaded 内）に追加
+    function setupScoreAutoResult() {
+        const myScoreInput = document.getElementById('match-score-my');
+        const oppScoreInput = document.getElementById('match-score-opp');
+        const resultSelect = document.getElementById('match-result-select');
+
+        function checkResult() {
+            const my = parseInt(myScoreInput.value, 10);
+            const opp = parseInt(oppScoreInput.value, 10);
+            if (!isNaN(my) && !isNaN(opp)) {
+                if (my > opp) {
+                    resultSelect.value = 'win';
+                } else if (my < opp) {
+                    resultSelect.value = 'lose';
+                }
+                // 同点（0-0など）のときは手動選択されている値を維持
+            }
+        }
+
+        if (myScoreInput && oppScoreInput) {
+            myScoreInput.addEventListener('input', checkResult);
+            oppScoreInput.addEventListener('input', checkResult);
+        }
+    }
+    // ページ初期化時に呼び出し
+    document.addEventListener('DOMContentLoaded', setupScoreAutoResult);
+
     function changeMyStatsPlayer(playerName) {
         loginUserName = playerName;
         if (playerName) {
@@ -2315,6 +2426,9 @@
         // --- ★追加: この選手の生涯通算トス振り分け実績を集計 ---
         const combinedTossDist = {};
         (savedMatches || []).forEach(m => {
+            // ★追加：練習試合の配球は通算に含めない
+            if (m.matchType === 'practice') return;
+
             const pData = (m.playersData || []).find(p => String(p.id) === String(myPlayer.id));
             if (pData && pData.tossDistribution) {
                 Object.entries(pData.tossDistribution).forEach(([pos, cnt]) => {
@@ -2548,6 +2662,7 @@
         // ★修正: 上の階層（親グループ/大会・日付単位）のユニーク数をカウント
         const parentMatchGroups = new Set(
             (savedMatches || []).map(m => {
+                if (m.matchType === 'practice') return null; // ★練習試合はチーム平均の試合数から除外
                 // 親グループ識別キー（groupKey優先、なければ日付+大会名/試合名から判定）
                 if (m.groupKey) return m.groupKey;
                 if (m.matchGroupKey) return m.matchGroupKey;
@@ -2855,6 +2970,15 @@
         currentLostPoints = { opponentSpike: 0, opponentFeint: 0, blocked: 0, opponentServe: 0, selfError: 0 };
         localStorage.setItem('vball9_current_lost_points', JSON.stringify(currentLostPoints));
         updateLostPointsDisplay();
+
+        // ★追加：スコア入力欄を 0 - 0、勝敗を「勝ち」にリセット
+        const scoreMyEl = document.getElementById('match-score-my');
+        const scoreOppEl = document.getElementById('match-score-opp');
+        const resultEl = document.getElementById('match-result-select');
+        if (scoreMyEl) scoreMyEl.value = '0';
+        if (scoreOppEl) scoreOppEl.value = '0';
+        if (resultEl) resultEl.value = 'win';
+
         saveStorage();
         renderFlickCourt();
         updateLostPointsDisplay();
@@ -2877,6 +3001,8 @@
         const dateEl = document.getElementById('match-date-input');
         const tourEl = document.getElementById('match-tournament-input');
         const nameEl = document.getElementById('match-name-input');
+        const typeEl = document.getElementById('match-type-select');
+        const matchTypeVal = typeEl ? typeEl.value : 'official';
 
         let dateVal = '';
         if (dateEl && dateEl.value) {
@@ -2893,6 +3019,14 @@
             alert("対戦相手を入力してください（例: 対長田戦）。");
             return;
         }
+
+        const scoreMyEl = document.getElementById('match-score-my');
+        const scoreOppEl = document.getElementById('match-score-opp');
+        const resultEl = document.getElementById('match-result-select');
+
+        const scoreMyVal = scoreMyEl ? scoreMyEl.value : '';
+        const scoreOppVal = scoreOppEl ? scoreOppEl.value : '';
+        const resultVal = resultEl ? resultEl.value : 'win';
 
         const matchGroupKey = `${dateVal} ${tourVal} ${vsVal}`;
 
@@ -2934,10 +3068,14 @@
             id: Date.now(),
             name: fullTitle,
             matchGroupKey: matchGroupKey,
+            matchType: matchTypeVal, // ★追加：'official' または 'practice' を記録
             setLabel: setLabel,
             date: dateVal,
             tournament: tourVal,
             vsName: vsVal,
+            scoreMy: scoreMyVal,       // ★自チーム得点
+            scoreOpp: scoreOppVal,     // ★相手チーム得点
+            matchResult: resultVal,    // ★'win' または 'lose'
             playersData: currentSavedPlayers,
             flickStarters: flickStarters.map(s => String(s || "")),
             lostPoints: JSON.parse(JSON.stringify(currentLostPoints)),
@@ -2947,10 +3085,14 @@
         savedMatches.push(matchRecord);
         saveStorage();
 
-        nameEl.value = '対';
+    nameEl.value = '対';
         if (tourEl) tourEl.value = '';
 
-        // ★修正：resetCurrentStats(true) が失点データも0にリセットするため、保存後に自動で0に戻ります
+        // ★修正：空文字ではなく 0 に戻す
+        if (scoreMyEl) scoreMyEl.value = '0';
+        if (scoreOppEl) scoreOppEl.value = '0';
+        if (resultEl) resultEl.value = 'win';
+
         resetCurrentStats(true);
         showToast(`「${fullTitle}」を保存しました`);
     }
@@ -2987,15 +3129,22 @@
                 groups[groupKey].sets.push(m);
             });
 
-            Object.values(groups).forEach(g => {
-                html += `
-                    <div class="history-item-card" onclick="openMatchGroup('${g.key}')">
-                        <div class="history-icon-circle">📁</div>
-                        <div class="history-card-name" style="margin-top:6px; margin-bottom:4px;">${g.key}</div>
-                        <div class="history-card-date">${g.date}</div>
-                    </div>
-                `;
-            });
+        Object.values(groups).forEach(g => {
+            // ★追加：グループ内のセットが練習試合かどうかを判定
+            const isPractice = g.sets.some(s => s.matchType === 'practice');
+            const badgeHtml = isPractice 
+                ? '<span style="display:inline-block; font-size:0.65rem; background:#64748b; color:white; padding:1px 6px; border-radius:4px; margin-bottom:4px;">練習試合</span>' 
+                : '<span style="display:inline-block; font-size:0.65rem; background:#2563eb; color:white; padding:1px 6px; border-radius:4px; margin-bottom:4px;">大会</span>';
+
+            html += `
+                <div class="history-item-card" onclick="openMatchGroup('${g.key}')">
+                    <div class="history-icon-circle">📁</div>
+                    ${badgeHtml}
+                    <div class="history-card-name" style="margin-top:2px; margin-bottom:4px;">${g.key}</div>
+                    <div class="history-card-date">${g.date}</div>
+                </div>
+            `;
+        });
         } else {
             if (breadcrumbEl) {
                 breadcrumbEl.innerHTML = `閲覧中: <span style="color:#2563eb;">${currentSelectedMatchGroupKey}</span>`;
@@ -3025,10 +3174,33 @@
                 const isSelected = String(m.id) === String(currentSelectedMatchId);
                 const setLabel = m.setLabel || m.name.match(/第\d+セット/) || 'データ';
 
+                // ★勝敗による背景色・枠線色・バッジの判定
+                const isWin = m.matchResult === 'win';
+                const isLose = m.matchResult === 'lose';
+
+                let cardStyle = '';
+                let resultBadge = '';
+
+                if (isWin) {
+                    cardStyle = 'background: #f0fdf4; border-color: #22c55e;';
+                    resultBadge = '<span style="display:inline-block; font-size:0.7rem; font-weight:bold; background:#16a34a; color:#fff; padding:1px 6px; border-radius:4px; margin-top:3px;">WIN</span>';
+                } else if (isLose) {
+                    cardStyle = 'background: #fef2f2; border-color: #ef4444;';
+                    resultBadge = '<span style="display:inline-block; font-size:0.7rem; font-weight:bold; background:#dc2626; color:#fff; padding:1px 6px; border-radius:4px; margin-top:3px;">LOSE</span>';
+                }
+
+                // ★スコア表記の生成（例: 21 - 18）
+                let scoreText = '';
+                if (m.scoreMy !== undefined && m.scoreMy !== '' && m.scoreOpp !== undefined && m.scoreOpp !== '') {
+                    scoreText = `<div style="font-size:0.8rem; font-weight:800; color:#1e293b; margin-top:2px;">${m.scoreMy} - ${m.scoreOpp}</div>`;
+                }
+
                 html += `
-                    <div class="history-item-card ${isSelected ? 'selected' : ''}" onclick="loadMatchData('${m.id}')">
+                    <div class="history-item-card ${isSelected ? 'selected' : ''}" style="${cardStyle}" onclick="loadMatchData('${m.id}')">
                         <div class="history-card-name" style="font-size:0.9rem;">${setLabel}</div>
-                        <div class="history-card-date">${m.date || ''}</div>
+                        ${scoreText}
+                        ${resultBadge}
+                        <div class="history-card-date" style="margin-top:2px;">${m.date || ''}</div>
                     </div>
                 `;
             });
@@ -3313,9 +3485,22 @@
             });
         });
 
-        combinedMatch.playersData = Object.values(playerMap);
+        // ★修正：全スタッツの合計が0より大きい（何かしら記録がある）選手だけを残す
+        combinedMatch.playersData = Object.values(playerMap).filter(p => {
+            const st = p.stats || initStatsObj();
+            const totalActionCount = 
+                (st.spike.success + st.spike.continue + st.spike.error) +
+                (st.serve.success + st.serve.continue + st.serve.error) +
+                (st.block.success + st.block.continue + st.block.error) +
+                (st.reception.success + st.reception.continue + st.reception.error) +
+                (st.toss ? (st.toss.success + st.toss.continue + st.toss.error) : 0) +
+                (st.otherError || 0);
+
+            return totalActionCount > 0;
+        });
+
         currentSelectedMatchId = combinedMatch.id;
-        window.lastCombinedMatch = combinedMatch; // 追加
+        window.lastCombinedMatch = combinedMatch;
 
         renderSavedMatchesSelect();
         renderMatchPlayerTable(combinedMatch);
@@ -3679,7 +3864,17 @@
                 const st = p.stats || initStatsObj();
                 const photoImg = p.photo ? `<img src="${p.photo}" class="list-photo" draggable="false">` : '';
 
-                const isSetterInMatch = matchStarters.some((sId, idx) => String(sId) === String(p.id) && FLICK_STARTER_LABELS[idx] === 'セッター');
+                // ★この試合で入っていたポジション名を取得（※1試合通算成績のときは表示しない）
+                let playedPosName = '';
+                if (!match.isCombined) {
+                    const starterIdx = matchStarters.findIndex(sId => String(sId) === String(p.id));
+                    if (starterIdx !== -1) {
+                        playedPosName = FLICK_STARTER_LABELS[starterIdx]; // 例: "レフト"
+                    } else {
+                        playedPosName = p.position || ''; // スタメン配置外の場合は登録ポジション
+                    }
+                }
+
                 const tr = document.createElement('tr');
 
                 const spikeTotal = st.spike.success + st.spike.continue + st.spike.error;
@@ -3718,10 +3913,17 @@
                 const otherErr = st.otherError || 0;
                 let otherErrClass = (otherErr >= 3) ? "cell-warn" : "";
 
-                let nameHtml = `${photoImg}${p.name}`;
-                if (isSetterInMatch) {
-                    nameHtml += ` <span class="badge" style="background:#2563eb;">S</span>`;
-                }
+                // ★名前の下に（ポジション名）を小さく配置
+                const posHtml = playedPosName ? `<div style="font-size:0.68rem; color:#64748b; font-weight:normal; line-height:1.2;">（${playedPosName}）</div>` : '';
+                const nameHtml = `
+                    <div style="display:flex; align-items:center;">
+                        ${photoImg}
+                        <div>
+                            <div>${p.name}</div>
+                            ${posHtml}
+                        </div>
+                    </div>
+                `;
 
                 const editBtnHtml = match.isCombined 
                     ? '<span style="font-size:0.75rem; color:#94a3b8;">通算</span>'
@@ -3771,6 +3973,76 @@
             closeModal('edit-match-name-modal');
             showToast('試合名を修正しました');
         }
+    }
+
+    // 失点データ編集モーダルを開く
+    function openEditLostPointsModal() {
+        if (!currentSelectedMatchId) return;
+        // 1試合通算成績表示中は単一セットではないため編集不可
+        if (String(currentSelectedMatchId).startsWith('combined_')) {
+            alert('1試合通算成績の失点データは直接編集できません。各セットのデータを開いて編集してください。');
+            return;
+        }
+
+        const match = savedMatches.find(m => m.id == currentSelectedMatchId);
+        if (!match) return;
+
+        const lp = match.lostPoints || { opponentSpike: 0, opponentFeint: 0, blocked: 0, opponentServe: 0, selfError: 0 };
+        const oa = match.opponentAttacks || { left: 0, leftSemi: 0, quick: 0, rightSemi: 0, right: 0, twoAttack: 0 };
+
+        // 自チーム失点パターン
+        document.getElementById('hist-lost-spike').value = lp.opponentSpike || 0;
+        document.getElementById('hist-lost-feint').value = lp.opponentFeint || 0;
+        document.getElementById('hist-lost-blocked').value = lp.blocked || 0;
+        document.getElementById('hist-lost-serve').value = lp.opponentServe || 0;
+        document.getElementById('hist-lost-self').value = lp.selfError || 0;
+
+        // 相手被攻撃位置
+        document.getElementById('hist-opp-left').value = oa.left || 0;
+        document.getElementById('hist-opp-leftSemi').value = oa.leftSemi || 0;
+        document.getElementById('hist-opp-quick').value = oa.quick || 0;
+        document.getElementById('hist-opp-rightSemi').value = oa.rightSemi || 0;
+        document.getElementById('hist-opp-right').value = oa.right || 0;
+        document.getElementById('hist-opp-twoAttack').value = oa.twoAttack || 0;
+
+        document.getElementById('edit-lost-points-modal').style.display = 'flex';
+    }
+
+    // 入力された失点データを保存する
+    function saveEditedLostPointsData() {
+        if (document.activeElement) document.activeElement.blur();
+
+        if (!currentSelectedMatchId) return;
+        const match = savedMatches.find(m => m.id == currentSelectedMatchId);
+        if (!match) return;
+
+        // 自チーム失点パターンの更新
+        match.lostPoints = {
+            opponentSpike: Math.max(0, parseInt(document.getElementById('hist-lost-spike').value, 10) || 0),
+            opponentFeint: Math.max(0, parseInt(document.getElementById('hist-lost-feint').value, 10) || 0),
+            blocked: Math.max(0, parseInt(document.getElementById('hist-lost-blocked').value, 10) || 0),
+            opponentServe: Math.max(0, parseInt(document.getElementById('hist-lost-serve').value, 10) || 0),
+            selfError: Math.max(0, parseInt(document.getElementById('hist-lost-self').value, 10) || 0)
+        };
+
+        // 相手被攻撃位置の更新
+        match.opponentAttacks = {
+            left: Math.max(0, parseInt(document.getElementById('hist-opp-left').value, 10) || 0),
+            leftSemi: Math.max(0, parseInt(document.getElementById('hist-opp-leftSemi').value, 10) || 0),
+            quick: Math.max(0, parseInt(document.getElementById('hist-opp-quick').value, 10) || 0),
+            rightSemi: Math.max(0, parseInt(document.getElementById('hist-opp-rightSemi').value, 10) || 0),
+            right: Math.max(0, parseInt(document.getElementById('hist-opp-right').value, 10) || 0),
+            twoAttack: Math.max(0, parseInt(document.getElementById('hist-opp-twoAttack').value, 10) || 0)
+        };
+
+        // ストレージ（FirestoreおよびLocalStorage）へ保存
+        saveStorage();
+
+        // 画面の失点サマリー表示を即時再描画
+        renderLostPointsSummary(match);
+
+        closeModal('edit-lost-points-modal');
+        showToast('失点データを修正しました');
     }
 
     // 過去試合閲覧時の失点内訳表示処理
@@ -4420,7 +4692,6 @@
 
         const num = document.getElementById('p-number').value;
         const name = document.getElementById('p-name').value;
-        const loginId = document.getElementById('p-login-id').value.trim(); // ★追加
         const height = document.getElementById('p-height').value;
         const condition = document.getElementById('p-condition').value;
         const pos = document.getElementById('p-position').value;
@@ -4430,18 +4701,13 @@
         const fileInput = document.getElementById('p-image');
 
         if (!validatePlayerInput(num, name, height, null, pos)) return;
-        if (!loginId) {
-            alert("ログイン用IDを入力してください。");
-            return;
-        }
 
         const photoDataDataUrl = await readImageFile(fileInput);
 
         players.push({
             id: Date.now(),
             number: String(Number(num)),
-            name: name.trim(), // 表示名（例: なおき）
-            loginId: loginId.toLowerCase(), // ログイン用ID（例: naoki）
+            name: name.trim(),
             height: height || '-',
             condition: condition || '普通',
             position: pos,
@@ -4453,7 +4719,6 @@
 
         document.getElementById('p-number').value = '';
         document.getElementById('p-name').value = '';
-        document.getElementById('p-login-id').value = ''; // ★追加
         document.getElementById('p-height').value = '';
         document.getElementById('p-memo').value = '';
         fileInput.value = '';
@@ -4472,7 +4737,6 @@
         document.getElementById('edit-id').value = player.id;
         document.getElementById('edit-number').value = player.number;
         document.getElementById('edit-name').value = player.name;
-        document.getElementById('edit-login-id').value = player.loginId || ''; // ★追加
         document.getElementById('edit-height').value = player.height !== '-' ? player.height : '';
         document.getElementById('edit-condition').value = player.condition || '普通';
         document.getElementById('edit-memo').value = player.memo || '';
@@ -4516,6 +4780,9 @@
         const combined = initStatsObj();
 
         savedMatches.forEach(match => {
+            // ★追加：練習試合の場合は通算成績に含めずスキップする
+            if (match.matchType === 'practice') return;
+
             if (!match.playersData) return;
             const pData = match.playersData.find(p => String(p.id) === String(playerId));
             if (pData && pData.stats) {
@@ -4530,6 +4797,12 @@
                 combined.otherError += st.otherError || 0;
             }
         });
+
+        // ★追加：現在「記録」画面で入力中のものが練習試合モードなら、入力中データも生涯通算に加算しない
+        const currentType = document.getElementById('match-type-select')?.value;
+        if (currentType === 'practice') {
+            return combined;
+        }
 
         const currentP = players.find(p => String(p.id) === String(playerId));
         if (currentP && currentP.stats) {
@@ -4834,7 +5107,6 @@
         if (player) {
             const num = document.getElementById('edit-number').value;
             const name = document.getElementById('edit-name').value;
-            const loginId = document.getElementById('edit-login-id').value.trim(); // ★追加
             const height = document.getElementById('edit-height').value;
             const condition = document.getElementById('edit-condition').value;
             const memo = document.getElementById('edit-memo').value;
@@ -4842,17 +5114,12 @@
             const pos = document.getElementById('edit-position').value;
 
             if (!validatePlayerInput(num, name, height, id, pos)) return;
-            if (!loginId) {
-                alert("ログイン用IDを入力してください。");
-                return;
-            }
 
             const newPhoto = await readImageFile(fileInput);
             if (newPhoto) player.photo = newPhoto;
 
             player.number = String(Number(num));
             player.name = name.trim();
-            player.loginId = loginId.toLowerCase(); // ★追加
             player.height = height || '-';
             player.condition = condition;
             player.position = pos;
