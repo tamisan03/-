@@ -1498,6 +1498,11 @@
                         <div style="font-size:0.72rem; color:#64748b; font-weight:bold; margin-bottom:2px;">ディグ(緩打)</div>
                         <div style="font-size:1.1rem; font-weight:800;"><span id="count-lost-feint">0</span><span style="font-size:0.75rem; font-weight:normal;">本</span></div>
                     </button>
+                    <!-- ★追加：ブロックミスボタン -->
+                    <button type="button" onclick="recordLostPoint('blockError')" style="background: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0; padding: 10px 2px; border-radius: 8px; cursor: pointer; text-align: center;">
+                        <div style="font-size:0.72rem; color:#64748b; font-weight:bold; margin-bottom:2px;">ブロックミス</div>
+                        <div style="font-size:1.1rem; font-weight:800;"><span id="count-lost-block-err">0</span><span style="font-size:0.75rem; font-weight:normal;">本</span></div>
+                    </button>
                     <button type="button" onclick="recordLostPoint('blocked')" style="background: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0; padding: 10px 2px; border-radius: 8px; cursor: pointer; text-align: center;">
                         <div style="font-size:0.72rem; color:#64748b; font-weight:bold; margin-bottom:2px;">被ブロック</div>
                         <div style="font-size:1.1rem; font-weight:800;"><span id="count-lost-blocked">0</span><span style="font-size:0.75rem; font-weight:normal;">本</span></div>
@@ -1898,6 +1903,11 @@
                     <label>ディグ(緩打)</label>
                     <input type="number" id="hist-lost-feint" min="0">
                 </div>
+                <!-- ★追加：ブロックミスの入力欄 -->
+                <div>
+                    <label>ブロックミス</label>
+                    <input type="number" id="hist-lost-block-err" min="0">
+                </div>
                 <div>
                     <label>被ブロック</label>
                     <input type="number" id="hist-lost-blocked" min="0">
@@ -2239,6 +2249,7 @@
     let currentLostPoints = JSON.parse(localStorage.getItem('vball9_current_lost_points')) || {
         opponentSpike: 0,
         opponentFeint: 0,
+        blockError: 0, // ★追加
         blocked: 0,
         opponentServe: 0,
         selfError: 0
@@ -2325,6 +2336,7 @@
         const labels = {
             opponentSpike: 'ディグ(強打)',
             opponentFeint: 'ディグ(緩打)',
+            blockError: 'ブロックミス', // ★追加
             blocked: '被ブロック',
             opponentServe: 'レセプション',
             selfError: '自滅'
@@ -2336,6 +2348,10 @@
         if (document.getElementById('count-lost-spike')) {
             document.getElementById('count-lost-spike').textContent = currentLostPoints.opponentSpike || 0;
             document.getElementById('count-lost-feint').textContent = currentLostPoints.opponentFeint || 0;
+            // ★追加
+            if (document.getElementById('count-lost-block-err')) {
+                document.getElementById('count-lost-block-err').textContent = currentLostPoints.blockError || 0;
+            }
             if (document.getElementById('count-lost-blocked')) {
                 document.getElementById('count-lost-blocked').textContent = currentLostPoints.blocked || 0;
             }
@@ -3076,7 +3092,7 @@
         updateOpponentAttacksDisplay();
         players.forEach(p => { p.stats = initStatsObj(); });
         // ★修正：失点記録をゼロクリアしてローカルストレージと画面を更新
-        currentLostPoints = { opponentSpike: 0, opponentFeint: 0, blocked: 0, opponentServe: 0, selfError: 0 };
+        currentLostPoints = { opponentSpike: 0, opponentFeint: 0, blockError: 0, blocked: 0, opponentServe: 0, selfError: 0 };
         localStorage.setItem('vball9_current_lost_points', JSON.stringify(currentLostPoints));
         updateLostPointsDisplay();
 
@@ -3538,7 +3554,7 @@
             matchType: firstSet.matchType || 'official', // ★ここを追加：練習試合か大会かを引き継ぐ
             playersData: [],
             flickStarters: firstSet.flickStarters || [],
-            lostPoints: { opponentSpike: 0, opponentFeint: 0, blocked: 0, opponentServe: 0, selfError: 0 },
+            lostPoints: { opponentSpike: 0, opponentFeint: 0, blockError: 0, blocked: 0, opponentServe: 0, selfError: 0 },
             opponentAttacks: { left: 0, leftSemi: 0, quick: 0, rightSemi: 0, right: 0, twoAttack: 0 },
             isCombined: true
         };
@@ -3548,6 +3564,7 @@
             if (m.lostPoints) {
                 combinedMatch.lostPoints.opponentSpike += m.lostPoints.opponentSpike || 0;
                 combinedMatch.lostPoints.opponentFeint += m.lostPoints.opponentFeint || 0;
+                combinedMatch.lostPoints.blockError += m.lostPoints.blockError || 0; // ★追加
                 combinedMatch.lostPoints.blocked += m.lostPoints.blocked || 0;
                 combinedMatch.lostPoints.opponentServe += m.lostPoints.opponentServe || 0;
                 combinedMatch.lostPoints.selfError += m.lostPoints.selfError || 0;
@@ -4123,12 +4140,13 @@
         const match = savedMatches.find(m => m.id == currentSelectedMatchId);
         if (!match) return;
 
-        const lp = match.lostPoints || { opponentSpike: 0, opponentFeint: 0, blocked: 0, opponentServe: 0, selfError: 0 };
+        const lp = match.lostPoints || { opponentSpike: 0, opponentFeint: 0, blockError: 0, blocked: 0, opponentServe: 0, selfError: 0 };
         const oa = match.opponentAttacks || { left: 0, leftSemi: 0, quick: 0, rightSemi: 0, right: 0, twoAttack: 0 };
 
         // 自チーム失点パターン
         document.getElementById('hist-lost-spike').value = lp.opponentSpike || 0;
         document.getElementById('hist-lost-feint').value = lp.opponentFeint || 0;
+        document.getElementById('hist-lost-block-err').value = lp.blockError || 0; // ★追加
         document.getElementById('hist-lost-blocked').value = lp.blocked || 0;
         document.getElementById('hist-lost-serve').value = lp.opponentServe || 0;
         document.getElementById('hist-lost-self').value = lp.selfError || 0;
@@ -4156,6 +4174,7 @@
         match.lostPoints = {
             opponentSpike: Math.max(0, parseInt(document.getElementById('hist-lost-spike').value, 10) || 0),
             opponentFeint: Math.max(0, parseInt(document.getElementById('hist-lost-feint').value, 10) || 0),
+            blockError: Math.max(0, parseInt(document.getElementById('hist-lost-block-err').value, 10) || 0), // ★追加
             blocked: Math.max(0, parseInt(document.getElementById('hist-lost-blocked').value, 10) || 0),
             opponentServe: Math.max(0, parseInt(document.getElementById('hist-lost-serve').value, 10) || 0),
             selfError: Math.max(0, parseInt(document.getElementById('hist-lost-self').value, 10) || 0)
@@ -4183,8 +4202,10 @@
 
     // 過去試合閲覧時の失点内訳表示処理（ランキング横棒グラフ版）
     function renderLostPointsSummary(match) {
-        const lp = match.lostPoints || { opponentSpike: 0, opponentFeint: 0, blocked: 0, opponentServe: 0, selfError: 0 };
-        const totalLost = (lp.opponentSpike || 0) + (lp.opponentFeint || 0) + (lp.blocked || 0) + (lp.opponentServe || 0) + (lp.selfError || 0);
+        // ★修正: blockError: 0 を初期値に追加
+        const lp = match.lostPoints || { opponentSpike: 0, opponentFeint: 0, blockError: 0, blocked: 0, opponentServe: 0, selfError: 0 };
+        // ★修正: 合計（totalLost）に (lp.blockError || 0) を加算
+        const totalLost = (lp.opponentSpike || 0) + (lp.opponentFeint || 0) + (lp.blockError || 0) + (lp.blocked || 0) + (lp.opponentServe || 0) + (lp.selfError || 0);
 
         // --- 1. 自チーム失点パターン内訳 ---
         let container = document.getElementById('history-lost-points-summary');
@@ -4206,6 +4227,7 @@
         const lostItems = [
             { label: 'ディグ(強打)', count: lp.opponentSpike || 0 },
             { label: 'ディグ(緩打)', count: lp.opponentFeint || 0 },
+            { label: 'ブロックミス', count: lp.blockError || 0 }, // ★追加
             { label: '被ブロック',   count: lp.blocked || 0 },
             { label: 'レセプション', count: lp.opponentServe || 0 },
             { label: '自滅',         count: lp.selfError || 0 }
