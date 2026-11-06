@@ -1489,6 +1489,7 @@
                     <div id="match-meta-header" style="font-size:1rem; font-weight:bold; color:#1e293b;"></div>
                     <div id="single-match-actions" class="history-action-btn-group">
                         <button class="btn-history-edit" onclick="openEditMatchNameModal()">試合名修正</button>
+                        <button class="btn-history-edit" style="background:#0284c7;" onclick="openEditLostPointsModal()">失点データ修正</button>
                         <button class="btn-history-del" onclick="deleteSelectedMatchData()">試合データ削除</button>
                     </div>
                 </div>
@@ -1767,6 +1768,76 @@
         <div class="modal-actions">
             <button class="action-btn" onclick="saveEditedMatchName()">変更を保存</button>
             <button class="btn-cancel" onclick="closeModal('edit-match-name-modal')">キャンセル</button>
+        </div>
+    </div>
+</div>
+
+<!-- ★追加：過去データの失点内訳修正モーダル -->
+<div class="modal-overlay" id="edit-lost-points-modal">
+    <div class="modal" style="max-width: 520px;">
+        <h2>失点データの修正</h2>
+
+        <!-- 自チーム失点パターン -->
+        <div class="edit-stat-group">
+            <div class="edit-stat-group-title">🔻 自チーム失点パターン内訳</div>
+            <div class="grid-3col" style="row-gap: 8px;">
+                <div>
+                    <label>ディグ(強打)</label>
+                    <input type="number" id="hist-lost-spike" min="0">
+                </div>
+                <div>
+                    <label>ディグ(緩打)</label>
+                    <input type="number" id="hist-lost-feint" min="0">
+                </div>
+                <div>
+                    <label>被ブロック</label>
+                    <input type="number" id="hist-lost-blocked" min="0">
+                </div>
+                <div>
+                    <label>レセプション</label>
+                    <input type="number" id="hist-lost-serve" min="0">
+                </div>
+                <div>
+                    <label>自滅</label>
+                    <input type="number" id="hist-lost-self" min="0">
+                </div>
+            </div>
+        </div>
+
+        <!-- 相手攻撃ポジション別失点 -->
+        <div class="edit-stat-group">
+            <div class="edit-stat-group-title"> 相手攻撃ポジション別失点</div>
+            <div class="grid-3col" style="row-gap: 8px;">
+                <div>
+                    <label>レフト</label>
+                    <input type="number" id="hist-opp-left" min="0">
+                </div>
+                <div>
+                    <label>レフトセミ</label>
+                    <input type="number" id="hist-opp-leftSemi" min="0">
+                </div>
+                <div>
+                    <label>速攻</label>
+                    <input type="number" id="hist-opp-quick" min="0">
+                </div>
+                <div>
+                    <label>ライトセミ</label>
+                    <input type="number" id="hist-opp-rightSemi" min="0">
+                </div>
+                <div>
+                    <label>ライト</label>
+                    <input type="number" id="hist-opp-right" min="0">
+                </div>
+                <div>
+                    <label>2アタック</label>
+                    <input type="number" id="hist-opp-twoAttack" min="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="action-btn" onclick="saveEditedLostPointsData()">変更を保存</button>
+            <button class="btn-cancel" onclick="closeModal('edit-lost-points-modal')">キャンセル</button>
         </div>
     </div>
 </div>
@@ -3414,9 +3485,22 @@
             });
         });
 
-        combinedMatch.playersData = Object.values(playerMap);
+        // ★修正：全スタッツの合計が0より大きい（何かしら記録がある）選手だけを残す
+        combinedMatch.playersData = Object.values(playerMap).filter(p => {
+            const st = p.stats || initStatsObj();
+            const totalActionCount = 
+                (st.spike.success + st.spike.continue + st.spike.error) +
+                (st.serve.success + st.serve.continue + st.serve.error) +
+                (st.block.success + st.block.continue + st.block.error) +
+                (st.reception.success + st.reception.continue + st.reception.error) +
+                (st.toss ? (st.toss.success + st.toss.continue + st.toss.error) : 0) +
+                (st.otherError || 0);
+
+            return totalActionCount > 0;
+        });
+
         currentSelectedMatchId = combinedMatch.id;
-        window.lastCombinedMatch = combinedMatch; // 追加
+        window.lastCombinedMatch = combinedMatch;
 
         renderSavedMatchesSelect();
         renderMatchPlayerTable(combinedMatch);
@@ -3780,7 +3864,17 @@
                 const st = p.stats || initStatsObj();
                 const photoImg = p.photo ? `<img src="${p.photo}" class="list-photo" draggable="false">` : '';
 
-                const isSetterInMatch = matchStarters.some((sId, idx) => String(sId) === String(p.id) && FLICK_STARTER_LABELS[idx] === 'セッター');
+                // ★この試合で入っていたポジション名を取得（※1試合通算成績のときは表示しない）
+                let playedPosName = '';
+                if (!match.isCombined) {
+                    const starterIdx = matchStarters.findIndex(sId => String(sId) === String(p.id));
+                    if (starterIdx !== -1) {
+                        playedPosName = FLICK_STARTER_LABELS[starterIdx]; // 例: "レフト"
+                    } else {
+                        playedPosName = p.position || ''; // スタメン配置外の場合は登録ポジション
+                    }
+                }
+
                 const tr = document.createElement('tr');
 
                 const spikeTotal = st.spike.success + st.spike.continue + st.spike.error;
@@ -3819,10 +3913,17 @@
                 const otherErr = st.otherError || 0;
                 let otherErrClass = (otherErr >= 3) ? "cell-warn" : "";
 
-                let nameHtml = `${photoImg}${p.name}`;
-                if (isSetterInMatch) {
-                    nameHtml += ` <span class="badge" style="background:#2563eb;">S</span>`;
-                }
+                // ★名前の下に（ポジション名）を小さく配置
+                const posHtml = playedPosName ? `<div style="font-size:0.68rem; color:#64748b; font-weight:normal; line-height:1.2;">（${playedPosName}）</div>` : '';
+                const nameHtml = `
+                    <div style="display:flex; align-items:center;">
+                        ${photoImg}
+                        <div>
+                            <div>${p.name}</div>
+                            ${posHtml}
+                        </div>
+                    </div>
+                `;
 
                 const editBtnHtml = match.isCombined 
                     ? '<span style="font-size:0.75rem; color:#94a3b8;">通算</span>'
@@ -3872,6 +3973,76 @@
             closeModal('edit-match-name-modal');
             showToast('試合名を修正しました');
         }
+    }
+
+    // 失点データ編集モーダルを開く
+    function openEditLostPointsModal() {
+        if (!currentSelectedMatchId) return;
+        // 1試合通算成績表示中は単一セットではないため編集不可
+        if (String(currentSelectedMatchId).startsWith('combined_')) {
+            alert('1試合通算成績の失点データは直接編集できません。各セットのデータを開いて編集してください。');
+            return;
+        }
+
+        const match = savedMatches.find(m => m.id == currentSelectedMatchId);
+        if (!match) return;
+
+        const lp = match.lostPoints || { opponentSpike: 0, opponentFeint: 0, blocked: 0, opponentServe: 0, selfError: 0 };
+        const oa = match.opponentAttacks || { left: 0, leftSemi: 0, quick: 0, rightSemi: 0, right: 0, twoAttack: 0 };
+
+        // 自チーム失点パターン
+        document.getElementById('hist-lost-spike').value = lp.opponentSpike || 0;
+        document.getElementById('hist-lost-feint').value = lp.opponentFeint || 0;
+        document.getElementById('hist-lost-blocked').value = lp.blocked || 0;
+        document.getElementById('hist-lost-serve').value = lp.opponentServe || 0;
+        document.getElementById('hist-lost-self').value = lp.selfError || 0;
+
+        // 相手被攻撃位置
+        document.getElementById('hist-opp-left').value = oa.left || 0;
+        document.getElementById('hist-opp-leftSemi').value = oa.leftSemi || 0;
+        document.getElementById('hist-opp-quick').value = oa.quick || 0;
+        document.getElementById('hist-opp-rightSemi').value = oa.rightSemi || 0;
+        document.getElementById('hist-opp-right').value = oa.right || 0;
+        document.getElementById('hist-opp-twoAttack').value = oa.twoAttack || 0;
+
+        document.getElementById('edit-lost-points-modal').style.display = 'flex';
+    }
+
+    // 入力された失点データを保存する
+    function saveEditedLostPointsData() {
+        if (document.activeElement) document.activeElement.blur();
+
+        if (!currentSelectedMatchId) return;
+        const match = savedMatches.find(m => m.id == currentSelectedMatchId);
+        if (!match) return;
+
+        // 自チーム失点パターンの更新
+        match.lostPoints = {
+            opponentSpike: Math.max(0, parseInt(document.getElementById('hist-lost-spike').value, 10) || 0),
+            opponentFeint: Math.max(0, parseInt(document.getElementById('hist-lost-feint').value, 10) || 0),
+            blocked: Math.max(0, parseInt(document.getElementById('hist-lost-blocked').value, 10) || 0),
+            opponentServe: Math.max(0, parseInt(document.getElementById('hist-lost-serve').value, 10) || 0),
+            selfError: Math.max(0, parseInt(document.getElementById('hist-lost-self').value, 10) || 0)
+        };
+
+        // 相手被攻撃位置の更新
+        match.opponentAttacks = {
+            left: Math.max(0, parseInt(document.getElementById('hist-opp-left').value, 10) || 0),
+            leftSemi: Math.max(0, parseInt(document.getElementById('hist-opp-leftSemi').value, 10) || 0),
+            quick: Math.max(0, parseInt(document.getElementById('hist-opp-quick').value, 10) || 0),
+            rightSemi: Math.max(0, parseInt(document.getElementById('hist-opp-rightSemi').value, 10) || 0),
+            right: Math.max(0, parseInt(document.getElementById('hist-opp-right').value, 10) || 0),
+            twoAttack: Math.max(0, parseInt(document.getElementById('hist-opp-twoAttack').value, 10) || 0)
+        };
+
+        // ストレージ（FirestoreおよびLocalStorage）へ保存
+        saveStorage();
+
+        // 画面の失点サマリー表示を即時再描画
+        renderLostPointsSummary(match);
+
+        closeModal('edit-lost-points-modal');
+        showToast('失点データを修正しました');
     }
 
     // 過去試合閲覧時の失点内訳表示処理
