@@ -3239,8 +3239,8 @@
             if (breadcrumbEl) breadcrumbEl.style.display = 'none';
 
             const groups = {};
-            // 日付の昇順（古い日付➔最新日付）でグループ化して表示
-            const sortedMatches = [...savedMatches].sort((a, b) => new Date(a.date) - new Date(b.date));
+            // ★最新の日付が先頭に来るように降順ソート（b - a）
+            const sortedMatches = [...savedMatches].sort((a, b) => new Date(b.date) - new Date(a.date));
 
             sortedMatches.forEach(m => {
                 const groupKey = m.matchGroupKey || m.name.replace(/ 第\d+セット$/, '');
